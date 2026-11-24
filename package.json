@@ -1,0 +1,17 @@
+{
+  "name": "objetune",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run --prefix frontend start",
+    "build": "npm run --prefix frontend build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:clean": "tauri clean",
+    "test": "npm test --prefix frontend"
+  }
+}
