@@ -1,0 +1,62 @@
+/* Settings Component Styles */
+.vw-settings {
+  padding: 1rem;
+  background: var(--vw-bg-secondary);
+  border-radius: 8px;
+  margin: 1rem;
+}
+
+.vw-settings__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--vw-wood-dark);
+  margin: 0 0 1rem 0;
+}
+
+.vw-settings__group {
+  margin-bottom: 1.5rem;
+}
+
+.vw-settings__group-title {
+  font-size: 0.9rem;
+  color: var(--vw-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.75rem 0;
+}
+
+.vw-settings__item {
+  margin-bottom: 1rem;
+}
+
+.vw-settings__label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.vw-settings__checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.vw-settings__checkbox:checked {
+  background: var(--vw-wood-primary);
+  border-color: var(--vw-amber-dark);
+}
+
+.vw-settings__label-text {
+  font-size: 0.9rem;
+  color: var(--vw-text-primary);
+  font-weight: 500;
+}
+
+.vw-settings__description {
+  font-size: 0.75rem;
+  color: var(--vw-text-disabled);
+  margin: 0.25rem 0 0 0;
+  padding-left: 2.25rem; /* checkbox + label width */
+}

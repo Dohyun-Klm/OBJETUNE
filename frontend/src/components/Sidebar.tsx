@@ -4,6 +4,8 @@ import './Sidebar.css';
 interface SidebarProps {
   currentView: 'all' | 'playlists' | 'favorites' | 'recently-played';
   onViewChange: (view: 'all' | 'playlists' | 'favorites' | 'recently-played') => void;
+  currentMode?: 'shell' | 'library' | 'turntable';
+  onModeChange?: (mode: 'library' | 'turntable') => void;
   className?: string;
 }
 
@@ -18,6 +20,8 @@ const navigationItems = [
 export const Sidebar: React.FC<SidebarProps> = ({ 
   currentView, 
   onViewChange, 
+  currentMode = 'library',
+  onModeChange,
   className = '' 
 }) => {
   return (
@@ -25,6 +29,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="vw-sidebar__logo" aria-label="OBJETUNE">
         <span>OBJETUNE</span>
       </div>
+      
+      {/* 앱 모드 전환 (터널블 모드 전용) */}
+      {onModeChange && (
+        <div className="vw-sidebar__mode-switch">
+          <button
+            className={`vw-sidebar__mode-btn ${currentMode === 'turntable' ? 'vw-sidebar__mode-btn--active' : ''}`}
+            onClick={() => onModeChange('turntable')}
+            aria-label="Turntable Mode"
+          >
+            🎧
+          </button>
+          <button
+            className={`vw-sidebar__mode-btn ${currentMode === 'library' ? 'vw-sidebar__mode-btn--active' : ''}`}
+            onClick={() => onModeChange('library')}
+            aria-label="Library Mode"
+          >
+            🖼️
+          </button>
+        </div>
+      )}
+      
       <div className="vw-sidebar__nav">
         {navigationItems.map((item) => (
           <a

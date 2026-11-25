@@ -23,6 +23,40 @@
   margin-bottom: 1rem;
 }
 
+.vw-sidebar__mode-switch {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--vw-amber-bg);
+  border-bottom: 1px solid var(--vw-amber-dark);
+  margin-bottom: 0.5rem;
+}
+
+.vw-sidebar__mode-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--vw-wood-dark);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.vw-sidebar__mode-btn:hover {
+  background: var(--vw-amber-bg);
+  transform: scale(1.1);
+}
+
+.vw-sidebar__mode-btn--active {
+  background: var(--vw-wood-primary);
+  color: var(--vw-bg-primary);
+  border-color: var(--vw-amber-dark);
+}
+
 .vw-sidebar__nav {
   flex: 1;
   display: flex;

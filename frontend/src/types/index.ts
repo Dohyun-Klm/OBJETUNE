@@ -15,6 +15,8 @@ export interface Track {
   url: string; // 플레이리스트용 URL
   isPlayable: boolean;
   addedAt: string; // ISO date string
+  // Dynamic Vinyl Label용 아트워크 URL ( 선택적, 플랫폼에 따라 다름 )
+  coverArtUrl?: string;
 }
 
 // 플레이리스트
@@ -65,4 +67,18 @@ export interface LibraryViewState {
   searchQuery: string;
   platformFilter: PlatformFilter;
   selectedPlatform: PlatformFilter;
+}
+
+// 재생 상태 모델
+export type PlaybackState = 'playing' | 'paused' | 'stopped' | 'loading';
+
+// 턴테이블 설정
+export interface TurntableSettings {
+  dynamicVinylLabel: boolean; // LP 중앙 라벨에 아트워크 표시 여부
+}
+
+// LP 회전 관련 상태
+export interface VinylState {
+  rotation: number; // 회전 각도 (도 단위)
+  isRotating: boolean; // 회전 중인지 여부
 }
