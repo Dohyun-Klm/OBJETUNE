@@ -60,154 +60,48 @@ fn default_limit() -> u32 { 10 }
 struct SoundCloudApiClient;
 
 impl SoundCloudApiClient {
-    const BASE_URL: &'static str = "https://api.soundcloud.com";
-
-    /// 트랙 검색 (공개 콘텐츠만)
-    async fn search_tracks(query: &str, limit: u32) -> Result<Vec<SoundCloudTrack>, String> {
-        let client = reqwest::Client::new();
-        
-        let params = [
-            ("q", query),
-            ("limit", &limit.to_string()),
-            ("client_id", &get_client_id()),
-        ];
-
-        let url = format!("{}/search/tracks", Self::BASE_URL);
-        
-        let response = client
-            .get(&url)
-            .query(&params)
-            .send()
-            .await
-            .map_err(|e| format!("API 요청 실패: {}", e))?;
-
-        if response.status() == StatusCode::TOO_MANY_REQUESTS {
-            return Err("요청이 과도합니다".to_string());
-        }
-
-        let json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
-        let items: Vec<_> = json.as_array().unwrap_or(&Vec::new()).to_vec();
-
-        let tracks = items.into_iter().filter_map(|item| {
-            Some(SoundCloudTrack {
-                id: item.get("id")?.as_u64()?,
-                title: item.get("title")?.as_str()?.to_string(),
-                description: item.get("description")?.as_str()?.to_string(),
-                url: item.get("permalink_url")?.as_str()?.to_string(),
-                embed_url: format!(
-                    "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/{}",
-                    item.get("id")?
-                ),
-                artwork_url: item.get("artwork_url").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                user: item.get("user").and_then(|u| u.as_object()).and_then(|u| {
-                    Some(SoundCloudUser {
-                        id: u.get("id")?.as_u64()?,
-                        username: u.get("username")?.as_str()?.to_string(),
-                        avatar_url: u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                        permalink_url: u.get("permalink_url")?.as_str()?.to_string(),
-                    })
-                }),
-                duration: item.get("duration")?.as_u64()? as u32,
-                genre: item.get("genre").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                release_date: item.get("release_date").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                created_at: item.get("created_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            })
-        }).collect();
-
-        Ok(tracks)
-    }
-
-    /// URL로 트랙 정보 추출
+    /// SoundCloud URL에서 track 정보 추출
+    /// Artist Pro 없이도 SoundCloud Widget으로 재생 가능하도록 URL 직접 매핑
     async fn get_track_by_url(url: &str) -> Result<SoundCloudTrack, String> {
-        // URL에서 track ID 추출 시도
-        let track_id = Self::extract_track_id(url);
+        let trimmed_url = url.trim();
         
-        if let Some(id) = track_id {
-            let client = reqwest::Client::new();
-            let api_url = format!("{}/tracks/{}", Self::BASE_URL, id);
-            
-            // client_id 파라미터 추가
-            let url_with_key = format!("{}?client_id={}", api_url, get_client_id());
-            
-            let response = client
-                .get(&url_with_key)
-                .send()
-                .await
-                .map_err(|e| format!("API 요청 실패: {}", e))?;
-
-            if response.status() == StatusCode::NOT_FOUND {
-                return Err("트랙을 찾을 수 없습니다".to_string());
-            }
-
-            let item = response.json::<serde_json::Value>().await.map_err(|e| e.to_string())?;
-            
-            // Helper function to extract optional field
-            let get_str = |obj: &serde_json::Value, key: &str, default: &str| -> String {
-                obj.get(key)
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(default)
-                    .to_string()
-            };
-
-            let track_id_val = item.get("id").and_then(|v| v.as_u64());
-            let title = get_str(&item, "title", "Unknown Title");
-            let description = get_str(&item, "description", "");
-            let permalink_url = get_str(&item, "permalink_url", "");
-            
-            let artwork_url = item.get("artwork_url").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let genre = item.get("genre").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let release_date = item.get("release_date").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let created_at = item.get("created_at").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let duration = item.get("duration").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-
-            let user = item.get("user").and_then(|u| u.as_object()).map(|u| {
-                let u = u.clone();
-                SoundCloudUser {
-                    id: u.get("id").and_then(|v| v.as_u64()).unwrap_or(0),
-                    username: get_str(&serde_json::Value::Object(u.clone()), "username", ""),
-                    avatar_url: u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                    permalink_url: get_str(&serde_json::Value::Object(u), "permalink_url", ""),
-                }
-            });
-
-            return Ok(SoundCloudTrack {
-                id: track_id_val.unwrap_or(0),
-                title,
-                description,
-                url: permalink_url.clone(),
-                embed_url: format!(
-                    "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/{}",
-                    track_id_val.unwrap_or(0)
-                ),
-                artwork_url,
-                user,
-                duration,
-                genre,
-                release_date,
-                created_at,
-            });
+        // SoundCloud URL 정규식 검증
+        if !trimmed_url.contains("soundcloud.com") && !trimmed_url.contains("soundcloud.fr") {
+            return Err("SoundCloud URL이 아닙니다".to_string());
         }
 
-        Err("트랙 ID를 추출할 수 없습니다".to_string())
-    }
-
-    /// SoundCloud URL에서 track ID 추출
-    fn extract_track_id(url: &str) -> Option<u64> {
-        use regex::Regex;
+        // URL에서 artist/track 추출 시도
+        let title = if let Some(last_segment) = trimmed_url.rsplit('/').next() {
+            if !last_segment.is_empty() {
+                // URL에서 추출한 이름으로 타이틀 생성
+                let clean_name = last_segment.replace('_', " ").replace('-', " ");
+                format!("\"{}\"", clean_name)
+            } else {
+                trimmed_url.to_string()
+            }
+        } else {
+            trimmed_url.to_string()
+        };
         
-        // 숫자 ID가 있는 경우
-        let re = Regex::new(r"(\d+)$").ok()?;
-        re.captures(url)?.get(1)?.as_str().parse().ok()
+        let embed_url = format!(
+            "https://w.soundcloud.com/player/?url={}",
+            trimmed_url.replace(" ", "%20")
+        );
+        
+        Ok(SoundCloudTrack {
+            id: 0,
+            title,
+            description: String::new(),
+            url: trimmed_url.to_string(),
+            embed_url,
+            artwork_url: None,
+            user: None,
+            duration: 0,
+            genre: None,
+            release_date: None,
+            created_at: None,
+        })
     }
-}
-
-/// 클라이언트 ID (SoundCloud 공개 API용)
-fn get_client_id() -> String {
-    // SoundCloud는 공개 client_id가 제한적입니다
-    // 프로덕션에서는 환경변수로 관리해야 합니다
-    // 참고: SoundCloud Widget API를 사용할 때는 embed URL의 client_id가 필요할 수 있음
-    std::env::var("SOUNDCLOUD_CLIENT_ID")
-        .unwrap_or_else(|_| "2t9loNQ39az6DtGnbUdYXAoxq9DMqvxN1w9WnA5pTz3rwbG6sS9Fqjqn4t8YcGhT".to_string())
 }
 
 /// SoundCloud 트랙 검색 API

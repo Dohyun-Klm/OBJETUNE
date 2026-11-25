@@ -347,6 +347,12 @@ function App() {
         onModeChange={(mode) => setCurrentMode(mode)}
       />
       
+      {/* SoundCloud Player Container (숨겨진 위젯용) */}
+      <div id="soundcloud-player-container" style={{ display: 'none', width: '100%', height: '0' }} />
+      
+      {/* YouTube Player Container */}
+      <div id="youtube-player-container" style={{ display: 'none', width: '100%', height: '0' }} />
+      
       {/* 메인 컨텐츠 */}
       <div className="vw-main">
         {/* 턴테이블 모드 뷰 */}

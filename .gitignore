@@ -4,3 +4,6 @@
 *.pdb
 .server/
 *.exe
+Cargo.lock
+frontend/package-lock.json
+graphify-out/

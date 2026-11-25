@@ -527,25 +527,31 @@ export function validateSoundCloudUrl(url: string): { isValid: boolean; error?: 
 
 // SoundCloud 트랙 URL에서 track 정보 조회
 export async function fetchSoundCloudTrackByUrl(url: string): Promise<PlatformSearchResult> {
-  const response = await fetch(`/api/v1/soundcloud/track?url=${encodeURIComponent(url)}`);
+  // 프론트엔드에서 직접 SoundCloud Widget URL 생성
+  // Artist Pro 구독 없이도 Widget으로 재생 가능
+  const trimmedUrl = url.trim();
   
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'SoundCloud 트랙 조회 실패');
-  }
+  // URL에서 artist/track 추출
+  const trackName = trimmedUrl.split('/').pop()?.replace(/[-_]/g, ' ') || 'SoundCloud Track';
   
-  const data = await response.json();
+  // SoundCloud Widget URL 생성
+  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trimmedUrl)}`;
+  
+  // artist 추출 (URL에서)
+  const urlParts = trimmedUrl.split('/');
+  const artistIndex = urlParts.indexOf('soundcloud.com') + 1;
+  const artist = urlParts[artistIndex] || 'Unknown';
   
   return {
-    id: data.id.toString(),
-    title: data.title,
-    artist: data.user?.username || 'Unknown',
+    id: Date.now().toString(), // 고유 ID
+    title: trackName,
+    artist,
     album: '',
-    duration: data.duration / 1000 || 0,
-    thumbnail: data.artwork_url || `https://api.soundcloud.com/tracks/${data.id}/representative-thumb/normal.jpg`,
+    duration: 0, // Widget만 사용, 실제 duration은 API에서 못 가져옴
+    thumbnail: `https://w.soundcloud.com/community/theme/icons/brand/sounds.png`, // SoundCloud 기본 썸네일
     platform: 'soundcloud',
-    url: data.permalink_url,
-    embedUrl: data.embed_url,
+    url: trimmedUrl,
+    embedUrl,
     isPlayable: true,
   };
 }
