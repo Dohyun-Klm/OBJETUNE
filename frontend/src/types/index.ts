@@ -1,0 +1,68 @@
+/**
+ * OBJETUNE 타입 정의
+ * 모든 타입은 목업 데이터를 위한 것이며 실제 API와는 분리됨
+ */
+
+// 음악 트랙
+export interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number; // 초 단위
+  thumbnail: string; // 이미지 URL (목업)
+  platform: 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
+  url: string; // 플레이리스트용 URL
+  isPlayable: boolean;
+  addedAt: string; // ISO date string
+}
+
+// 플레이리스트
+export interface Playlist {
+  id: string;
+  name: string;
+  description: string;
+  trackCount: number;
+  coverImage: string;
+  createdAt: string;
+  updatedAt: string;
+  isFavorite: boolean;
+}
+
+// 사용자 정보
+export interface User {
+  id: string;
+  displayName: string;
+  email: string;
+  avatar: string;
+}
+
+// 앱 모드
+export type AppMode = 'shell' | 'library' | 'turntable';
+
+// 검색 결과
+export interface SearchResult {
+  tracks: Track[];
+  playlists: Playlist[];
+  totalResults: number;
+}
+
+// 현재 재생 중인 트랙 정보
+export interface NowPlaying {
+  track: Track;
+  isPlaying: boolean;
+  volume: number;
+  progress: number; // 초 단위
+  duration: number;
+}
+
+// 플랫폼 필터
+export type PlatformFilter = 'all' | 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
+
+// 라이브러리 뷰 상태
+export interface LibraryViewState {
+  currentView: 'all' | 'playlists' | 'favorites' | 'recently-played';
+  searchQuery: string;
+  platformFilter: PlatformFilter;
+  selectedPlatform: PlatformFilter;
+}

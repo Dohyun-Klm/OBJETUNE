@@ -1,0 +1,83 @@
+/* Sidebar Component - Vintage Walnut */
+.vw-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 240px;
+  background: var(--vw-bg-card);
+  border-right: 2px solid var(--vw-wood-primary);
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.vw-sidebar__logo {
+  padding: 1rem 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--vw-wood-primary);
+  background: var(--vw-gradient-amber);
+  border-bottom: 1px solid var(--vw-amber-dark);
+  margin-bottom: 1rem;
+}
+
+.vw-sidebar__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1.5rem;
+  color: var(--vw-text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  font-weight: 500;
+}
+
+.vw-sidebar__nav-item:hover,
+.vw-sidebar__nav-item--active {
+  background: var(--vw-amber-bg);
+  border-left-color: var(--vw-amber-dark);
+  color: var(--vw-wood-dark);
+}
+
+.vw-sidebar__nav-item--active {
+  font-weight: 600;
+}
+
+.vw-sidebar__nav-item__icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 1rem;
+  opacity: 0.8;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .vw-sidebar {
+    width: 60px;
+  }
+  
+  .vw-sidebar__logo,
+  .vw-sidebar__nav-item {
+    padding: 0.75rem 1rem;
+  }
+  
+  .vw-sidebar__nav-item__icon {
+    margin-right: 0;
+  }
+  
+  .vw-sidebar__nav-item span {
+    display: none;
+  }
+  
+  .vw-sidebar__nav-item--active {
+    border-left-width: 4px;
+  }
+}
