@@ -9,23 +9,14 @@ import { SearchBar } from './components/SearchBar';
 import { MusicCard } from './components/MusicCard';
 import { MiniPlayer } from './components/MiniPlayer';
 import { EmptyState } from './components/EmptyState';
-import { Loading } from './components/Loading';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
 import { Track, Playlist, AppMode, PlatformFilter, TurntableSettings, PlaybackState } from './types';
 import { mockTracks, mockPlaylists, mockNowPlaying } from './data/mockData';
 import { invoke } from '@tauri-apps/api/core';
 
-// Tauri API 호출을 위한 타입 정의
-interface AppInfo {
-  name: string;
-  version: string;
-  mode: string;
-}
-
 function App() {
   // 앱 상태
-  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [currentMode, setCurrentMode] = useState<AppMode>('shell');
   
   // 라이브러리 뷰 상태
@@ -34,7 +25,7 @@ function App() {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
   
   // 로딩 및 오류 상태
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // TODO: isLoading은 향후 로딩 상태 표시를 위해 보류
   const [error, setError] = useState<string | null>(null);
   
   // 현재 재생 상태 (목업)
@@ -54,28 +45,16 @@ function App() {
       try {
         // Tauri 환경 확인
         if ((window as any).__TAURI_INTEGRATION__) {
-          const info = await invoke<AppInfo>('get_app_info');
-          setAppInfo(info);
           const mode = await invoke<string>('get_current_mode');
           setCurrentMode(mode as AppMode);
         } else {
           // 개발 모드: 모의 데이터
-          setAppInfo({
-            name: 'OBJETUNE',
-            version: '0.1.0',
-            mode: 'shell',
-          });
           setCurrentMode('shell');
         }
       } catch (err) {
         console.error('Failed to load app data:', err);
         setError('앱 정보를 로드하는 중 오류가 발생했습니다.');
         // 오류 시 모의 데이터 사용
-        setAppInfo({
-          name: 'OBJETUNE',
-          version: '0.1.0',
-          mode: 'shell',
-        });
         setCurrentMode('shell');
       }
     };
@@ -191,9 +170,6 @@ function App() {
     localStorage.setItem('turntable-settings', JSON.stringify(newSettings));
   };
 
-  // 턴테이블 뷰 전용 타이틀
-  const turntableTitle = 'LP Turntable';
-
   return (
     <div className="vw-root">
       {/* 사이드바 */}
@@ -247,17 +223,17 @@ function App() {
               </div>
               
               {/* 로딩 중 */}
-              {isLoading && <Loading message="Loading music library..." />}
+              {/* isLoading is currently unused - reserved for future loading states */}
               
               {/* 오류 상태 */}
-              {error && !isLoading && (
+              {error && (
                 <div className="vw-error" role="alert">
                   <p>{error}</p>
                 </div>
               )}
               
               {/* 빈 상태 */}
-              {!isLoading && !error && displayItems.length === 0 && (
+              {!error && displayItems.length === 0 && (
                 <EmptyState
                   title="No music found"
                   description="Try adjusting your search or filter criteria"
@@ -265,7 +241,7 @@ function App() {
               )}
               
               {/* 결과 목록 */}
-              {!isLoading && !error && displayItems.length > 0 && (
+              {!error && displayItems.length > 0 && (
                 <div className="vw-library-grid">
                   {displayItems.map((item) => {
                     if (isPlaylistView) {

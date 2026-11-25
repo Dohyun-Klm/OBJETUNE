@@ -15,7 +15,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`vw-empty-state ${className}`} role="empty">
+    <div className={`vw-empty-state ${className}`} role="region" aria-label="Empty state">
       <svg
         className="vw-empty-state__icon"
         viewBox="0 0 100 100"

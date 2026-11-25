@@ -27,12 +27,6 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
     );
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
   return (
     <div className={`vw-mini-player ${className}`} role="region" aria-label="Mini player">
       <div className="vw-mini-player__cover" />

@@ -39,7 +39,7 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
 
   // 회전 애니메이션 처리 (reduced-motion 준수)
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
     
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
@@ -81,6 +81,7 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
       }}
       role="img"
       aria-label={track ? `${track.title} by ${track.artist}` : 'Turntable'}
+      data-testid="vinyl-record"
     >
       {/* LP 라벨 */}
       <div className={`vw-vinyl__label ${hasCoverArt ? 'vw-vinyl__label--artwork' : ''}`}>

@@ -24,7 +24,7 @@ export const Turntable: React.FC<TurntableProps> = ({
 
   return (
     <div className={`vw-turntable-container ${className}`} role="region" aria-label="Turntable">
-      <div className="vw-turntable" role="region" aria-label="Turntable">
+      <div className="vw-turntable">
         {/* 턴테이블 본체 - 월넛 우드 질감 */}
         <div className="vw-turntable__body">
           {/* LP 원판 */}
@@ -35,13 +35,13 @@ export const Turntable: React.FC<TurntableProps> = ({
           />
           
           {/* 톤암 */}
-          <div className="vw-tonearm">
-            <div className="vw-tonearm__pivot" />
-            <div className="vw-tonearm__head" />
+          <div className="vw-tonearm" data-testid="tonearm">
+            <div className="vw-tonearm__pivot" aria-hidden="true" data-testid="tonearm-pivot" />
+            <div className="vw-tonearm__head" aria-hidden="true" data-testid="tonearm-head" />
           </div>
           
           {/* HP (Hunting Lamp) 조명 효과 */}
-          <div className="vw-hp-light" />
+          <div className="vw-hp-light" aria-hidden="true" data-testid="hp-light" />
         </div>
         
         {/* 재생/일시정지 버튼 */}
