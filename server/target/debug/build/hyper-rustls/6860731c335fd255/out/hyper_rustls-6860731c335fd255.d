@@ -1,0 +1,9 @@
+C:\workspaces\objetune\server\target\debug\build\hyper-rustls/6860731c335fd255\out\hyper_rustls-6860731c335fd255.d: C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\lib.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\config.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector\builder.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\stream.rs
+
+C:\workspaces\objetune\server\target\debug\build\hyper-rustls/6860731c335fd255\out\libhyper_rustls-6860731c335fd255.rmeta: C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\lib.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\config.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector\builder.rs C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\stream.rs
+
+C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\lib.rs:
+C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\config.rs:
+C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector.rs:
+C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\connector\builder.rs:
+C:\Users\klmdo\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hyper-rustls-0.27.10\src\stream.rs:

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import './styles/vintage-walnut.css';
 import './components/Turntable.css';
@@ -11,9 +11,47 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { EmptyState } from './components/EmptyState';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
-import { Track, Playlist, AppMode, PlatformFilter, TurntableSettings, PlaybackState } from './types';
-import { mockTracks, mockPlaylists, mockNowPlaying } from './data/mockData';
+import { 
+  Track, 
+  Playlist, 
+  AppMode, 
+  PlatformFilter, 
+  TurntableSettings, 
+  PlaybackState
+} from './types';
+import { 
+  mockTracks, 
+  mockPlaylists, 
+  mockNowPlaying,
+  mockAdapterSearchResults
+} from './data/mockData';
+import { 
+  platformManager, 
+  YouTubeAdapter, 
+  SoundCloudAdapter,
+  PlatformSearchResult,
+  PlayerState,
+  loadYouTubeAPI,
+  loadSoundCloudAPI
+} from './services/platformAdapter';
 import { invoke } from '@tauri-apps/api/core';
+
+// 목업용 Track을 PlatformSearchResult로 변환
+function mockToPlatformResult(track: Track): PlatformSearchResult {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    album: track.album,
+    duration: track.duration,
+    thumbnail: track.thumbnail,
+    platform: track.platform === 'youtube' ? 'youtube' : 'soundcloud',
+    url: track.url,
+    embedUrl: track.url,
+    publishedAt: undefined,
+    isPlayable: true,
+  };
+}
 
 function App() {
   // 앱 상태
@@ -25,8 +63,8 @@ function App() {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
   
   // 로딩 및 오류 상태
-  // TODO: isLoading은 향후 로딩 상태 표시를 위해 보류
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // 현재 재생 상태 (목업)
   const [nowPlaying, setNowPlaying] = useState(mockNowPlaying);
@@ -34,10 +72,11 @@ function App() {
   // 턴테이블 모드 재생 상태
   const [turntablePlaybackState, setTurntablePlaybackState] = useState<PlaybackState>('stopped');
   
-  // 턴테이블 설정
-  const [turntableSettings, setTurntableSettings] = useState<TurntableSettings>({
-    dynamicVinylLabel: false,
-  });
+  // 플레이어 상태 (플랫폼 어댑터용)
+  const [playerState, setPlayerState] = useState<PlayerState>('stopped');
+  
+  // 플레이어 준비 상태
+  const [playerReady, setPlayerReady] = useState(false);
 
   // Tauri API 확인 및 초기 데이터 로드
   useEffect(() => {
@@ -102,48 +141,143 @@ function App() {
   const isPlaylistView = currentView === 'playlists';
   const isTurntableMode = currentMode === 'turntable';
 
-  // 트랙 재생 핸들러 (목업)
+  // 플랫폼 API 로드
+  useEffect(() => {
+    const loadAPIs = async () => {
+      try {
+        // YouTube API 로드
+        await loadYouTubeAPI();
+        // SoundCloud API 로드
+        await loadSoundCloudAPI();
+        setPlayerReady(true);
+      } catch (err) {
+        console.error('플러그인 로드 실패:', err);
+      }
+    };
+    loadAPIs();
+  }, []);
+
+  // 플랫폼 어댑터 이벤트 구독
+  useEffect(() => {
+    const unsubscribePlay = platformManager.on('play', (event) => {
+      setPlayerState('playing');
+    });
+
+    const unsubscribePause = platformManager.on('pause', (event) => {
+      setPlayerState('paused');
+    });
+
+    const unsubscribeEnd = platformManager.on('end', (event) => {
+      setPlayerState('stopped');
+    });
+
+    const unsubscribeError = platformManager.on('error', (event) => {
+      setPlayerState('error');
+      const errMsg = (event.data as any)?.message || '재생 오류가 발생했습니다';
+      setError(errMsg);
+    });
+
+    return () => {
+      unsubscribePlay();
+      unsubscribePause();
+      unsubscribeEnd();
+      unsubscribeError();
+    };
+  }, []);
+
+  // 플랫폼 필터 핸들러
   const handlePlatformFilter = (platform: PlatformFilter) => {
     setPlatformFilter(platform);
   };
-  const handlePlay = (track: Track) => {
-    setNowPlaying({
-      ...mockNowPlaying,
-      track,
-      isPlaying: true,
-    });
-    // 턴테이블 모드에서도 재생 상태 업데이트
-    setTurntablePlaybackState('playing');
+
+  // 트랙 재생 핸들러 (목업 -> 실제 어댑터 연동)
+  const handlePlay = async (track: Track) => {
+    try {
+      const platformTrack = mockToPlatformResult(track);
+      
+      // 플랫폼 어댑터로 전환 및 로드
+      await platformManager.switchPlatform(platformTrack.platform, platformTrack);
+      
+      setNowPlaying({
+        ...mockNowPlaying,
+        track,
+        isPlaying: true,
+      });
+      setPlayerState('playing');
+      setTurntablePlaybackState('playing');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '재생 중 오류가 발생했습니다';
+      setError(message);
+    }
   };
 
   // 트랙 클릭 핸들러
-  const handleTrackClick = (track: Track) => {
-    // 목업: 단순히 nowPlaying 업데이트
-    setNowPlaying(prev => ({
-      ...prev,
-      track,
-      isPlaying: true,
-    }));
-    setTurntablePlaybackState('playing');
+  const handleTrackClick = async (track: Track) => {
+    try {
+      const platformTrack = mockToPlatformResult(track);
+      
+      // 이미 로드된 플레이어가 있다면 정지하고 새로 로드
+      await platformManager.switchPlatform(platformTrack.platform, platformTrack);
+      
+      setNowPlaying(prev => ({
+        ...prev,
+        track,
+        isPlaying: true,
+      }));
+      setPlayerState('playing');
+      setTurntablePlaybackState('playing');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '트랙 클릭 중 오류가 발생했습니다';
+      setError(message);
+    }
   };
 
   // 재생/일시정지 토글
-  const handlePlayPause = () => {
-    const newState = nowPlaying.isPlaying ? 'stopped' : 'playing';
-    setNowPlaying(prev => ({
-      ...prev,
-      isPlaying: !prev.isPlaying,
-    }));
-    setTurntablePlaybackState(newState);
+  const handlePlayPause = async () => {
+    try {
+      const adapter = platformManager.getCurrentAdapter();
+      if (!adapter) {
+        // 모의 동작
+        const newState = nowPlaying.isPlaying ? 'stopped' : 'playing';
+        setNowPlaying(prev => ({
+          ...prev,
+          isPlaying: !prev.isPlaying,
+        }));
+        setTurntablePlaybackState(newState);
+        return;
+      }
+
+      const state = await adapter.getState();
+      
+      if (state === 'playing' || state === 'paused') {
+        await adapter.pause();
+        setPlayerState('paused');
+        setTurntablePlaybackState(prev => 
+          prev === 'playing' ? 'paused' : 'playing'
+        );
+        setNowPlaying(prev => ({
+          ...prev,
+          isPlaying: !prev.isPlaying,
+        }));
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '재생 제어 중 오류가 발생했습니다';
+      setError(message);
+    }
   };
 
   // 다음 트랙
   const handleNext = () => {
     const currentIndex = mockTracks.findIndex(t => t.id === nowPlaying.track.id);
     const nextIndex = (currentIndex + 1) % mockTracks.length;
+    
+    // 목업 트랙 재생
+    const nextTrack = mockTracks[nextIndex];
+    handleTrackClick(nextTrack);
+    
     setNowPlaying(prev => ({
       ...prev,
-      track: mockTracks[nextIndex],
+      track: nextTrack,
       isPlaying: true,
       progress: 0,
     }));
@@ -154,9 +288,14 @@ function App() {
   const handlePrevious = () => {
     const currentIndex = mockTracks.findIndex(t => t.id === nowPlaying.track.id);
     const prevIndex = (currentIndex - 1 + mockTracks.length) % mockTracks.length;
+    
+    // 목업 트랙 재생
+    const prevTrack = mockTracks[prevIndex];
+    handleTrackClick(prevTrack);
+    
     setNowPlaying(prev => ({
       ...prev,
-      track: mockTracks[prevIndex],
+      track: prevTrack,
       isPlaying: true,
       progress: 0,
     }));
@@ -164,11 +303,22 @@ function App() {
   };
 
   // 턴테이블 설정 토글
+  const [turntableSettings, setTurntableSettings] = useState<TurntableSettings>({
+    dynamicVinylLabel: false,
+  });
+
   const handleToggleDynamicVinylLabel = () => {
     const newSettings = { ...turntableSettings, dynamicVinylLabel: !turntableSettings.dynamicVinylLabel };
     setTurntableSettings(newSettings);
     localStorage.setItem('turntable-settings', JSON.stringify(newSettings));
   };
+
+  // 컴포넌트 언마운트 시 플레이어 정리
+  useEffect(() => {
+    return () => {
+      platformManager.destroy();
+    };
+  }, []);
 
   return (
     <div className="vw-root">
@@ -223,17 +373,21 @@ function App() {
               </div>
               
               {/* 로딩 중 */}
-              {/* isLoading is currently unused - reserved for future loading states */}
+              {isLoading && (
+                <div className="vw-loading">
+                  <div className="vw-loading__spinner" aria-label="Loading" />
+                </div>
+              )}
               
               {/* 오류 상태 */}
-              {error && (
+              {error && !isLoading && (
                 <div className="vw-error" role="alert">
                   <p>{error}</p>
                 </div>
               )}
               
               {/* 빈 상태 */}
-              {!error && displayItems.length === 0 && (
+              {!error && !isLoading && displayItems.length === 0 && (
                 <EmptyState
                   title="No music found"
                   description="Try adjusting your search or filter criteria"
@@ -241,7 +395,7 @@ function App() {
               )}
               
               {/* 결과 목록 */}
-              {!error && displayItems.length > 0 && (
+              {!error && !isLoading && displayItems.length > 0 && (
                 <div className="vw-library-grid">
                   {displayItems.map((item) => {
                     if (isPlaylistView) {

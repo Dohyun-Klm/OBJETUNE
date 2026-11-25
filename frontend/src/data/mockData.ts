@@ -3,7 +3,7 @@
  * 목업 데이터로서 실제 API 응답과는 별개로 동작합니다.
  */
 
-import { Track, Playlist, NowPlaying } from '../types';
+import { Track, Playlist, NowPlaying, PlatformSearchResult } from '../types';
 
 // 목업 음악 트랙
 export const mockTracks: Track[] = [
@@ -167,6 +167,48 @@ export const mockNowPlaying: NowPlaying = {
   progress: 60,
   duration: mockTracks[0].duration,
 };
+
+// 플랫폼 어댑터용 목업 검색 결과
+export const mockAdapterSearchResults: PlatformSearchResult[] = [
+  {
+    id: 'youtube-video-1',
+    title: 'Blue Moon - Billie Holiday',
+    artist: 'Billie Holiday',
+    album: 'Lady in Satin',
+    duration: 255,
+    thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+    platform: 'youtube',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    publishedAt: '2010-03-25T09:30:00Z',
+    isPlayable: true,
+  },
+  {
+    id: 'youtube-video-2',
+    title: 'Let It Be - The Beatles',
+    artist: 'The Beatles',
+    album: 'Abbey Road',
+    duration: 243,
+    thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+    platform: 'youtube',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    publishedAt: '2009-11-19T12:00:00Z',
+    isPlayable: true,
+  },
+  {
+    id: 'sc-track-1',
+    title: 'What a Wonderful World - Louis Armstrong',
+    artist: 'Louis Armstrong',
+    album: 'What a Wonderful World',
+    duration: 126,
+    thumbnail: 'https://i.scdn.co/image/cRooIjU0rwbL',
+    platform: 'soundcloud',
+    url: 'https://soundcloud.com/louisarmstrong/whats-a-wonderful-world',
+    embedUrl: 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/123456',
+    isPlayable: true,
+  },
+];
 
 // 플랫폼 필터 옵션
 export const platformFilters = [
