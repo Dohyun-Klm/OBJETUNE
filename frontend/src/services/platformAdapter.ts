@@ -20,7 +20,7 @@ export interface PlatformSearchResult {
   isPlayable: boolean;
 }
 
-export type PlayerState = 'stopped' | 'playing' | 'paused' | 'buffering' | 'error';
+export type PlayerState = 'stopped' | 'playing' | 'paused' | 'buffering' | 'loading' | 'error' | 'ended';
 
 // 이벤트 페이스
 interface EventCallback {
