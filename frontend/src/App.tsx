@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import './styles/vintage-walnut.css';
 import './components/Turntable.css';
@@ -22,17 +22,13 @@ import {
 import { 
   mockTracks, 
   mockPlaylists, 
-  mockNowPlaying,
-  mockAdapterSearchResults
+  mockNowPlaying
 } from './data/mockData';
 import { 
   platformManager, 
-  YouTubeAdapter, 
-  SoundCloudAdapter,
-  PlatformSearchResult,
-  PlayerState,
-  loadYouTubeAPI,
-  loadSoundCloudAPI
+  loadYouTubeAPI, 
+  loadSoundCloudAPI,
+  PlatformSearchResult
 } from './services/platformAdapter';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -64,19 +60,12 @@ function App() {
   
   // 로딩 및 오류 상태
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   
   // 현재 재생 상태 (목업)
   const [nowPlaying, setNowPlaying] = useState(mockNowPlaying);
   
   // 턴테이블 모드 재생 상태
   const [turntablePlaybackState, setTurntablePlaybackState] = useState<PlaybackState>('stopped');
-  
-  // 플레이어 상태 (플랫폼 어댑터용)
-  const [playerState, setPlayerState] = useState<PlayerState>('stopped');
-  
-  // 플레이어 준비 상태
-  const [playerReady, setPlayerReady] = useState(false);
 
   // Tauri API 확인 및 초기 데이터 로드
   useEffect(() => {
@@ -149,7 +138,6 @@ function App() {
         await loadYouTubeAPI();
         // SoundCloud API 로드
         await loadSoundCloudAPI();
-        setPlayerReady(true);
       } catch (err) {
         console.error('플러그인 로드 실패:', err);
       }
@@ -159,29 +147,24 @@ function App() {
 
   // 플랫폼 어댑터 이벤트 구독
   useEffect(() => {
-    const unsubscribePlay = platformManager.on('play', (event) => {
-      setPlayerState('playing');
-    });
+    const subscriptions: Array<() => void> = [];
+    
+    subscriptions.push(platformManager.on('play', (event) => {
+    }).unsubscribe);
 
-    const unsubscribePause = platformManager.on('pause', (event) => {
-      setPlayerState('paused');
-    });
+    subscriptions.push(platformManager.on('pause', (event) => {
+    }).unsubscribe);
 
-    const unsubscribeEnd = platformManager.on('end', (event) => {
-      setPlayerState('stopped');
-    });
+    subscriptions.push(platformManager.on('end', (event) => {
+    }).unsubscribe);
 
-    const unsubscribeError = platformManager.on('error', (event) => {
-      setPlayerState('error');
-      const errMsg = (event.data as any)?.message || '재생 오류가 발생했습니다';
+    subscriptions.push(platformManager.on('error', (event) => {
+      const errMsg = (event as any)?.message || '재생 오류가 발생했습니다';
       setError(errMsg);
-    });
+    }).unsubscribe);
 
     return () => {
-      unsubscribePlay();
-      unsubscribePause();
-      unsubscribeEnd();
-      unsubscribeError();
+      subscriptions.forEach(unsub => unsub());
     };
   }, []);
 
@@ -203,7 +186,6 @@ function App() {
         track,
         isPlaying: true,
       });
-      setPlayerState('playing');
       setTurntablePlaybackState('playing');
     } catch (err) {
       const message = err instanceof Error ? err.message : '재생 중 오류가 발생했습니다';
@@ -224,7 +206,6 @@ function App() {
         track,
         isPlaying: true,
       }));
-      setPlayerState('playing');
       setTurntablePlaybackState('playing');
     } catch (err) {
       const message = err instanceof Error ? err.message : '트랙 클릭 중 오류가 발생했습니다';
@@ -251,7 +232,6 @@ function App() {
       
       if (state === 'playing' || state === 'paused') {
         await adapter.pause();
-        setPlayerState('paused');
         setTurntablePlaybackState(prev => 
           prev === 'playing' ? 'paused' : 'playing'
         );
@@ -372,22 +352,15 @@ function App() {
                 </h1>
               </div>
               
-              {/* 로딩 중 */}
-              {isLoading && (
-                <div className="vw-loading">
-                  <div className="vw-loading__spinner" aria-label="Loading" />
-                </div>
-              )}
-              
               {/* 오류 상태 */}
-              {error && !isLoading && (
+              {error && (
                 <div className="vw-error" role="alert">
                   <p>{error}</p>
                 </div>
               )}
               
               {/* 빈 상태 */}
-              {!error && !isLoading && displayItems.length === 0 && (
+              {!error && displayItems.length === 0 && (
                 <EmptyState
                   title="No music found"
                   description="Try adjusting your search or filter criteria"
@@ -395,7 +368,7 @@ function App() {
               )}
               
               {/* 결과 목록 */}
-              {!error && !isLoading && displayItems.length > 0 && (
+              {!error && displayItems.length > 0 && (
                 <div className="vw-library-grid">
                   {displayItems.map((item) => {
                     if (isPlaylistView) {

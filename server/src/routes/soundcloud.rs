@@ -205,6 +205,7 @@ impl SoundCloudApiClient {
 fn get_client_id() -> String {
     // SoundCloud는 공개 client_id가 제한적입니다
     // 프로덕션에서는 환경변수로 관리해야 합니다
+    // 참고: SoundCloud Widget API를 사용할 때는 embed URL의 client_id가 필요할 수 있음
     std::env::var("SOUNDCLOUD_CLIENT_ID")
         .unwrap_or_else(|_| "2t9loNQ39az6DtGnbUdYXAoxq9DMqvxN1w9WnA5pTz3rwbG6sS9Fqjqn4t8YcGhT".to_string())
 }
