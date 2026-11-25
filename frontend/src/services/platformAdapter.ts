@@ -270,32 +270,11 @@ class SoundCloudAdapter implements PlatformAdapter {
   private widget: any = null;
 
   async search(query: string, limit: number = 10): Promise<PlatformSearchResult[]> {
-    try {
-      const response = await fetch(`/api/v1/soundcloud/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'SoundCloud 검색 실패');
-      }
-      
-      const data = await response.json();
-      
-      return data.results.map((item: any) => ({
-        id: item.id.toString(),
-        title: item.title,
-        artist: item.user?.username || 'Unknown',
-        album: '',
-        duration: item.duration / 1000 || 0,
-        thumbnail: item.artwork_url || `https://api.soundcloud.com/tracks/${item.id}/representative-thumb/normal.jpg`,
-        platform: 'soundcloud' as Platform,
-        url: item.permalink_url,
-        embedUrl: item.embed_url,
-        isPlayable: true,
-      }));
-    } catch (error) {
-      console.error('SoundCloud 검색 오류:', error);
-      throw error;
-    }
+    // SoundCloud 검색은 API 키 문제로 비활성화됨
+    // 대신 URL 입력 방식으로 재생 지원
+    const error = new Error('SoundCloud 검색은 artist pro 구독이 필요합니다. 트랙 URL을 직접 입력해주세요.');
+    (error as any).code = 'SEARCH_NOT_SUPPORTED';
+    throw error;
   }
 
   async load(track: PlatformSearchResult): Promise<void> {
@@ -523,4 +502,50 @@ export async function loadSoundCloudAPI(): Promise<void> {
     script.onerror = () => reject(new Error('SoundCloud Widget API 로드 실패'));
     document.head.appendChild(script);
   });
+}
+
+// SoundCloud URL 유효성 검사
+export function validateSoundCloudUrl(url: string): { isValid: boolean; error?: string } {
+  const trimmedUrl = url.trim();
+  
+  if (!trimmedUrl) {
+    return { isValid: false, error: 'URL을 입력해주세요' };
+  }
+  
+  // SoundCloud URL 정규식
+  const soundcloudRegex = /^https?:\/\/(?:www\.)?soundcloud\.com\/[^/?#]+\/[^/?#]+/i;
+  
+  if (!soundcloudRegex.test(trimmedUrl)) {
+    return { 
+      isValid: false, 
+      error: '유효하지 않은 SoundCloud URL입니다. 예: https://soundcloud.com/artist/track-name' 
+    };
+  }
+  
+  return { isValid: true };
+}
+
+// SoundCloud 트랙 URL에서 track 정보 조회
+export async function fetchSoundCloudTrackByUrl(url: string): Promise<PlatformSearchResult> {
+  const response = await fetch(`/api/v1/soundcloud/track?url=${encodeURIComponent(url)}`);
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'SoundCloud 트랙 조회 실패');
+  }
+  
+  const data = await response.json();
+  
+  return {
+    id: data.id.toString(),
+    title: data.title,
+    artist: data.user?.username || 'Unknown',
+    album: '',
+    duration: data.duration / 1000 || 0,
+    thumbnail: data.artwork_url || `https://api.soundcloud.com/tracks/${data.id}/representative-thumb/normal.jpg`,
+    platform: 'soundcloud',
+    url: data.permalink_url,
+    embedUrl: data.embed_url,
+    isPlayable: true,
+  };
 }

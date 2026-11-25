@@ -13,8 +13,10 @@ export interface Track {
   thumbnail: string; // 이미지 URL (목업)
   platform: 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
   url: string; // 플레이리스트용 URL
+  embedUrl: string; // IFrame 플레이어용 URL (YouTube IFrame, SoundCloud Widget)
   isPlayable: boolean;
   addedAt: string; // ISO date string
+  isFavorite?: boolean; // 좋아요 표시
   // Dynamic Vinyl Label용 아트워크 URL ( 선택적, 플랫폼에 따라 다름 )
   coverArtUrl?: string;
 }
@@ -105,4 +107,20 @@ export interface NowPlaying {
   volume: number;
   progress: number; // 초 단위
   duration: number;
+}
+
+// 플랫폼 검색 결과 인터페이스 (SearchBar용)
+export interface PlatformSearchResult {
+  id: string;
+  videoId?: string;  // YouTube 전용
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  thumbnail: string;
+  platform: 'youtube' | 'soundcloud';
+  url: string;
+  embedUrl: string;
+  publishedAt?: string;
+  isPlayable: boolean;
 }

@@ -211,47 +211,20 @@ fn get_client_id() -> String {
 }
 
 /// SoundCloud 트랙 검색 API
+/// 검색 기능은 Artist Pro 구독이 필요하므로 비활성화됨
+/// 대신 URL 입력 방식(Widget API)으로 재생 지원
 pub async fn search(
-    Query(params): Query<SearchQuery>,
+    Query(_params): Query<SearchQuery>,
 ) -> Result<Json<SoundCloudSearchResult>, (StatusCode, Json<ErrorResponse>)> {
-    if params.q.trim().is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                message: "검색어를 입력해주세요".to_string(),
-                error_code: Some("EMPTY_QUERY".to_string()),
-            }),
-        ));
-    }
-
-    let limit = params.limit.min(50).max(1);
-    
-    match SoundCloudApiClient::search_tracks(&params.q, limit).await {
-        Ok(tracks) => Ok(Json(SoundCloudSearchResult {
-            results: tracks,
-            total_count: 0, // 실제 API에서는 별도 호출 필요
-        })),
-        Err(e) => {
-            // 네트워크 오류 구분
-            if e.contains("요청이 과도합니다") {
-                Err((
-                    StatusCode::TOO_MANY_REQUESTS,
-                    Json(ErrorResponse {
-                        message: "요청이 많습니다. 잠시 후 다시 시도해주세요.".to_string(),
-                        error_code: Some("RATE_LIMITED".to_string()),
-                    }),
-                ))
-            } else {
-                Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse {
-                        message: e,
-                        error_code: None,
-                    }),
-                ))
-            }
-        }
-    }
+    // SoundCloud 검색 API는 Artist Pro 구독이 필수
+    // MVP에서는 검색 기능을 비활성화하고 URL 입력 방식만 지원
+    Err((
+        StatusCode::GONE,  // 410: Search 기능 영구 중단됨
+        Json(ErrorResponse {
+            message: "SoundCloud 검색은 artist pro 구독이 필요합니다. 트랙 URL을 직접 입력해주세요.".to_string(),
+            error_code: Some("SEARCH_NOT_SUPPORTED".to_string()),
+        }),
+    ))
 }
 
 /// SoundCloud 트랙 URL에서 정보 추출 API

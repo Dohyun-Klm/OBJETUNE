@@ -17,7 +17,8 @@ import {
   AppMode, 
   PlatformFilter, 
   TurntableSettings, 
-  PlaybackState
+  PlaybackState,
+  PlatformSearchResult
 } from './types';
 import { 
   mockTracks, 
@@ -27,8 +28,7 @@ import {
 import { 
   platformManager, 
   loadYouTubeAPI, 
-  loadSoundCloudAPI,
-  PlatformSearchResult
+  loadSoundCloudAPI
 } from './services/platformAdapter';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -193,6 +193,43 @@ function App() {
     }
   };
 
+  // SoundCloud URL에서 추가된 트랙 처리
+  const handleSoundCloudTrackAdded = async (track: PlatformSearchResult) => {
+    try {
+      // 어댑터 전환 및 로드
+      await platformManager.switchPlatform('soundcloud', track);
+      
+      // Track 형식으로 변환
+      const newTrack: Track = {
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        duration: track.duration,
+        thumbnail: track.thumbnail,
+        platform: track.platform,
+        url: track.url,
+        embedUrl: track.embedUrl,
+        isPlayable: true,
+        addedAt: new Date().toISOString(),
+        isFavorite: false,
+      };
+      
+      setNowPlaying(prev => ({
+        ...prev,
+        track: newTrack,
+        isPlaying: true,
+      }));
+      setTurntablePlaybackState('playing');
+      
+      // 잠시 성공 메시지 표시
+      setError('트랙이 추가되었습니다.');
+      setTimeout(() => setError(null), 2000);
+    } catch (err: any) {
+      setError(err.message || '트랙 추가 중 오류가 발생했습니다');
+    }
+  };
+
   // 트랙 클릭 핸들러
   const handleTrackClick = async (track: Track) => {
     try {
@@ -339,6 +376,7 @@ function App() {
               onSearch={setSearchQuery}
               platformFilter={platformFilter}
               onPlatformFilter={handlePlatformFilter}
+              onSoundCloudTrackAdded={handleSoundCloudTrackAdded}
             />
             
             {/* 컨텐츠 영역 */}

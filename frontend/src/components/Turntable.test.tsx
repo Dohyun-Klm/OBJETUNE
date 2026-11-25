@@ -13,6 +13,7 @@ const mockTrack: Track = {
   thumbnail: '/test-thumbnail.jpg',
   platform: 'spotify',
   url: 'https://example.com/test',
+  embedUrl: 'https://open.spotify.com/embed/track/test',
   isPlayable: true,
   addedAt: '2024-01-01T00:00:00.000Z',
 };
