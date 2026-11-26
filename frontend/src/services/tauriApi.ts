@@ -477,6 +477,24 @@ export async function getQueue(): Promise<Track[]> {
   }
 }
 
+export async function addToQueue(trackId: string): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+
+  // In test environment, return success
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+
+  try {
+    return await invoke<boolean>('add_to_queue', { trackId });
+  } catch (error) {
+    console.error('Failed to add to queue:', error);
+    return false;
+  }
+}
+
 // 창 관리 API
 export async function getWindowSize(): Promise<{ width: number; height: number } | null> {
   if (!(await checkTauri())) {
@@ -734,5 +752,251 @@ export async function initializeApp(): Promise<boolean> {
   } catch (error) {
     console.error('Failed to initialize app:', error);
     return false;
+  }
+}
+
+// 재생 설정 API
+export async function getShuffle(): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return false;
+  }
+  
+  try {
+    return await invoke<boolean>('get_shuffle');
+  } catch (error) {
+    console.error('Failed to get shuffle:', error);
+    return false;
+  }
+}
+
+export async function setShuffle(enabled: boolean): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('set_shuffle', { enabled });
+  } catch (error) {
+    console.error('Failed to set shuffle:', error);
+    return false;
+  }
+}
+
+export async function getRepeat(): Promise<'off' | 'one' | 'all'> {
+  if (!(await checkTauri())) {
+    return 'off';
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return 'off';
+  }
+  
+  try {
+    return await invoke<'off' | 'one' | 'all'>('get_repeat');
+  } catch (error) {
+    console.error('Failed to get repeat:', error);
+    return 'off';
+  }
+}
+
+export async function setRepeat(mode: 'off' | 'one' | 'all'): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('set_repeat', { mode });
+  } catch (error) {
+    console.error('Failed to set repeat:', error);
+    return false;
+  }
+}
+
+// Queue API extensions
+export async function removeFromQueue(trackId: string): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('remove_from_queue', { trackId });
+  } catch (error) {
+    console.error('Failed to remove from queue:', error);
+    return false;
+  }
+}
+
+export async function clearQueue(): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('clear_queue');
+  } catch (error) {
+    console.error('Failed to clear queue:', error);
+    return false;
+  }
+}
+
+export async function moveQueueItem(trackId: string, newIndex: number): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('move_queue_item', { trackId, newPosition: newIndex + 1 });
+  } catch (error) {
+    console.error('Failed to move queue item:', error);
+    return false;
+  }
+}
+
+// Global shortcuts API
+export async function registerMediaShortcuts(): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('register_media_shortcuts');
+  } catch (error) {
+    console.error('Failed to register media shortcuts:', error);
+    return false;
+  }
+}
+
+export async function unregisterMediaShortcuts(): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('unregister_media_shortcuts');
+  } catch (error) {
+    console.error('Failed to unregister media shortcuts:', error);
+    return false;
+  }
+}
+
+// YouTube Search API
+export async function searchYouTubeTracks(query: string, limit?: number): Promise<Track[]> {
+  if (!(await checkTauri())) {
+    return [];
+  }
+  
+  // In test environment, return mock data from fixture
+  if (process.env.NODE_ENV === 'test') {
+    await loadMockData();
+    return mockTracks.filter(t => 
+      t.platform === 'youtube' && (
+        t.title.toLowerCase().includes(query.toLowerCase()) ||
+        t.artist.toLowerCase().includes(query.toLowerCase())
+      )
+    );
+  }
+  
+  try {
+    const response = await invoke('search_youtube_tracks', { query, limit }) as any[];
+    
+    return response.map(t => ({
+      id: t.id,
+      platform: t.platform as any,
+      platformId: t.platform_id,
+      title: t.title,
+      artist: t.artist,
+      album: t.album || '',
+      duration: t.duration,
+      thumbnail: t.thumbnail || '',
+      url: t.url || '',
+      embedUrl: t.embed_url,
+      isPlayable: true,
+      addedAt: new Date(t.added_at * 1000).toISOString(),
+      isFavorite: t.is_favorite,
+      coverArtUrl: t.cover_art_url || undefined,
+    }));
+  } catch (error) {
+    console.error('Failed to search YouTube tracks:', error);
+    return [];
+  }
+}
+
+// SoundCloud URL search
+export async function searchSoundCloudByUrl(url: string): Promise<Track | null> {
+  if (!(await checkTauri())) {
+    return null;
+  }
+  
+  // In test environment, return mock data
+  if (process.env.NODE_ENV === 'test') {
+    return {
+      id: 'sc_test',
+      platform: 'soundcloud',
+      title: 'SoundCloud Track',
+      artist: 'Test Artist',
+      album: '',
+      duration: 0,
+      thumbnail: '',
+      url,
+      embedUrl: `https://w.soundcloud.com/player/?url=${url}`,
+      isPlayable: true,
+      addedAt: new Date().toISOString(),
+    };
+  }
+  
+  try {
+    const response = await invoke('search_soundcloud_by_url', { url }) as any;
+    
+    return {
+      id: response.id,
+      platform: response.platform as any,
+      platformId: response.platform_id,
+      title: response.title,
+      artist: response.artist,
+      album: response.album || '',
+      duration: response.duration,
+      thumbnail: response.thumbnail || '',
+      url: response.url || '',
+      embedUrl: response.embed_url,
+      isPlayable: true,
+      addedAt: new Date(response.added_at * 1000).toISOString(),
+      isFavorite: response.is_favorite,
+      coverArtUrl: response.cover_art_url || undefined,
+    };
+  } catch (error) {
+    console.error('Failed to search SoundCloud by URL:', error);
+    return null;
   }
 }

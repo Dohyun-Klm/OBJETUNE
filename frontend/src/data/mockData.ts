@@ -174,6 +174,8 @@ export const mockNowPlaying: NowPlaying = {
   volume: 75,
   progress: 60,
   duration: mockTracks[0].duration,
+  shuffle: false,
+  repeat: 'off',
 };
 
 // 플랫폼 어댑터용 목업 검색 결과

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NowPlaying } from '../types';
+import { playerManager } from '../services/playerManager';
 import './MiniPlayer.css';
 
 interface MiniPlayerProps {
@@ -7,6 +8,9 @@ interface MiniPlayerProps {
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  onShuffleToggle?: () => void;
+  onRepeatToggle?: () => void;
+  onQueueToggle?: () => void;
   className?: string;
 }
 
@@ -15,6 +19,9 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   onPlayPause,
   onNext,
   onPrevious,
+  onShuffleToggle,
+  onRepeatToggle,
+  onQueueToggle,
   className = '',
 }) => {
   if (!nowPlaying) {
@@ -27,6 +34,9 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
     );
   }
 
+  const shuffle = nowPlaying.shuffle ?? false;
+  const repeat = nowPlaying.repeat ?? 'off';
+
   return (
     <div className={`vw-mini-player ${className}`} role="region" aria-label="Mini player">
       <div className="vw-mini-player__cover" />
@@ -37,6 +47,15 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
       </div>
 
       <div className="vw-mini-player__controls">
+        <button
+          className={`vw-mini-player__btn vw-mini-player__shuffle ${shuffle ? 'vw-mini-player__btn--active' : ''}`}
+          onClick={onShuffleToggle}
+          aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
+          aria-pressed={shuffle}
+        >
+          🔀
+        </button>
+        
         <button
           className="vw-mini-player__btn vw-mini-player__previous"
           onClick={onPrevious}
@@ -60,6 +79,25 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
         >
           ⏭️
         </button>
+
+        <button
+          className={`vw-mini-player__btn vw-mini-player__repeat ${repeat !== 'off' ? 'vw-mini-player__btn--active' : ''}`}
+          onClick={onRepeatToggle}
+          aria-label={`Repeat: ${repeat === 'off' ? 'off' : repeat === 'one' ? 'one' : 'all'}`}
+          aria-pressed={repeat !== 'off'}
+        >
+          {repeat === 'one' ? '🔂' : repeat === 'all' ? '🔁' : '🔁'}
+        </button>
+
+        {onQueueToggle && (
+          <button
+            className="vw-mini-player__btn vw-mini-player__queue"
+            onClick={onQueueToggle}
+            aria-label="Open queue"
+          >
+            📋
+          </button>
+        )}
       </div>
     </div>
   );

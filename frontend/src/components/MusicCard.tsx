@@ -7,6 +7,7 @@ interface MusicCardProps {
   onPlay?: (track: Track) => void;
   onClick?: (track: Track) => void;
   onFavoriteToggle?: (track: Track) => void;
+  onAddToQueue?: (track: Track) => void;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export const MusicCard: React.FC<MusicCardProps> = ({
   onPlay,
   onClick,
   onFavoriteToggle,
+  onAddToQueue,
   className = '',
 }) => {
   const handleClick = (e: React.MouseEvent) => {
@@ -33,6 +35,11 @@ export const MusicCard: React.FC<MusicCardProps> = ({
     if (onFavoriteToggle) {
       onFavoriteToggle(track);
     }
+  };
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddToQueue?.(track);
   };
 
   return (
@@ -56,13 +63,25 @@ export const MusicCard: React.FC<MusicCardProps> = ({
         <h3 className="vw-music-card__title">{track.title}</h3>
         <p className="vw-music-card__artist">{track.artist}</p>
         <p className="vw-music-card__album">{track.album}</p>
-        <button
-          className="vw-music-card__play-btn"
-          onClick={handlePlay}
-          aria-label={`Play ${track.title}`}
-        >
-          ▶
-        </button>
+        <div className="vw-music-card__actions">
+          <button
+            className="vw-music-card__play-btn"
+            onClick={handlePlay}
+            aria-label={`Play ${track.title}`}
+          >
+            ▶
+          </button>
+          {onAddToQueue && (
+            <button
+              className="vw-music-card__queue-btn"
+              onClick={handleAddToQueue}
+              aria-label={`Add ${track.title} to queue`}
+              title="Add to queue"
+            >
+              ➕
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

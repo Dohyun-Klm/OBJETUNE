@@ -24,6 +24,8 @@ const mockNowPlaying: NowPlaying = {
   volume: 80,
   progress: 30,
   duration: 180,
+  shuffle: false,
+  repeat: 'off',
 };
 
 describe('Turntable', () => {

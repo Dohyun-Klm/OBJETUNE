@@ -49,12 +49,14 @@ export interface PlayerEvent {
 // 플랫폼 타입
 export type Platform = 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
 
-// 플래티폼 필터
-export type PlatformFilter = 'all' | Platform;
+// 플래티폼 필터 (지원 플랫폼: YouTube, SoundCloud - Spotify/Bandcamp 미연동)
+export type PlatformFilter = 'youtube' | 'soundcloud';
 
 // 라이브러리 뷰 상태
+export type CurrentView = 'all' | 'playlists' | 'favorites' | 'recently-played' | 'queue';
+
 export interface LibraryViewState {
-  currentView: 'all' | 'playlists' | 'favorites' | 'recently-played';
+  currentView: CurrentView;
   searchQuery: string;
   platformFilter: PlatformFilter;
   selectedPlatform: PlatformFilter;
@@ -111,6 +113,8 @@ export interface NowPlaying {
   volume: number;
   progress: number; // 초 단위
   duration: number;
+  shuffle: boolean;  // 셔플 모드
+  repeat: 'off' | 'one' | 'all';  // 반복 모드
 }
 
 // Player Manager 상태

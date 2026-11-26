@@ -79,3 +79,37 @@
   color: var(--vw-bg-primary);
   transform: scale(1.1);
 }
+
+.vw-music-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.vw-music-card__queue-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--vw-amber-bg);
+  color: var(--vw-amber-dark);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vw-music-card:hover .vw-music-card__queue-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vw-music-card__queue-btn:hover {
+  background: var(--vw-wood-primary);
+  color: var(--vw-bg-primary);
+  transform: scale(1.1);
+}

@@ -30,7 +30,7 @@ describe('App', () => {
   it('renders search bar', async () => {
     await renderApp();
     expect(screen.getByLabelText('Search music')).toBeInTheDocument();
-    expect(screen.getByLabelText('Filter by platform')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Switch to SoundCloud' })).toBeInTheDocument();
   });
 
   it('renders navigation items', async () => {

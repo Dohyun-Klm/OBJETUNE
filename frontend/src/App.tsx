@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
 import { MusicCard } from './components/MusicCard';
 import { MiniPlayer } from './components/MiniPlayer';
+import { QueuePanel } from './components/QueuePanel';
 import { EmptyState } from './components/EmptyState';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
@@ -17,7 +18,8 @@ import {
   PlatformFilter, 
   TurntableSettings, 
   PlaybackState,
-  NowPlaying
+  NowPlaying,
+  CurrentView
 } from './types';
 import { 
   mockTracks, 
@@ -32,7 +34,7 @@ import {
   PlatformSearchResult
 } from './services/platformAdapter';
 import { playerManager } from './services/playerManager';
-import { 
+import {
   createTrack,
   createPlaylist,
   getPlaylists,
@@ -42,6 +44,10 @@ import {
   addFavorite,
   removeFavorite,
   addToHistory,
+  addToQueue,
+  removeFromQueue,
+  clearQueue,
+  moveQueueItem,
   getSetting,
   setSetting,
   getQueue,
@@ -56,6 +62,14 @@ import {
   maximize,
   unmaximize,
   minimize,
+  getShuffle,
+  setShuffle,
+  getRepeat,
+  setRepeat,
+  registerMediaShortcuts,
+  unregisterMediaShortcuts,
+  searchYouTubeTracks,
+  searchSoundCloudByUrl,
 } from './services/tauriApi';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -87,9 +101,9 @@ function App() {
   const [currentMode, setCurrentMode] = useState<AppMode>('shell');
   
   // 라이브러리 뷰 상태
-  const [currentView, setCurrentView] = useState<'all' | 'playlists' | 'favorites' | 'recently-played'>('all');
+  const [currentView, setCurrentView] = useState<CurrentView>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('youtube');
   
   // 로딩 및 오류 상태
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +123,10 @@ function App() {
     dynamicVinylLabel: false,
   });
 
+  // 큐 패널 상태
+  const [queuePanelOpen, setQueuePanelOpen] = useState(false);
+  const [queue, setQueue] = useState<Track[]>([]);
+
   // Tauri API 확인 및 초기 데이터 로드
   useEffect(() => {
     const loadAppData = async () => {
@@ -126,6 +144,13 @@ function App() {
           
           setLocalTracks(tracks.length > 0 ? tracks : mockTracks);
           setLocalPlaylists(playlists.length > 0 ? playlists : mockPlaylists);
+          
+          // 재생 설정 로드 (셔플/반복)
+          const [shuffle, repeat] = await Promise.all([
+            getShuffle(),
+            getRepeat()
+          ]);
+          setNowPlaying(prev => ({ ...prev, shuffle, repeat }));
         } else {
           // 개발 모드: 모의 데이터
           setCurrentMode('shell');
@@ -152,6 +177,17 @@ function App() {
     } catch {
       // 로드 실패 시 기본값 사용
     }
+    
+    // 글로벌 미디어 단축키 등록
+    registerMediaShortcuts().catch(err => {
+      console.error('Failed to register media shortcuts:', err);
+    });
+    
+    return () => {
+      unregisterMediaShortcuts().catch(err => {
+        console.error('Failed to unregister media shortcuts:', err);
+      });
+    };
   }, []);
 
   // 필터링된 트랙 목록
@@ -160,7 +196,7 @@ function App() {
                           track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.album.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesPlatform = platformFilter === 'all' || track.platform === platformFilter;
+    const matchesPlatform = track.platform === platformFilter;
     
     return matchesSearch && matchesPlatform;
   });
@@ -269,6 +305,70 @@ function App() {
     } catch (err) {
       const message = err instanceof Error ? err.message : '재생 중 오류가 발생했습니다';
       setError(message);
+    }
+  };
+
+  // YouTube 실제 검색 핸들러
+  const handleYouTubeSearch = async (query: string) => {
+    if (!query.trim()) return;
+    
+    try {
+      const results = await searchYouTubeTracks(query, 10);
+      
+      // 검색 결과를 트랙으로 변환하여 로컬 트랙에 추가하거나 표시
+      for (const result of results) {
+        // 기존 트랙에 존재하는지 확인
+        const exists = localTracks.some(t => t.id === result.id);
+        if (!exists) {
+          setLocalTracks(prev => [...prev, result]);
+        }
+      }
+      
+      if (results.length === 0) {
+        setError('검색 결과가 없습니다.');
+      }
+    } catch (err: any) {
+      setError(err.message || '검색 중 오류가 발생했습니다');
+    }
+  };
+
+  // SoundCloud URL에서 트랙 추가 핸들러
+  const handleSoundCloudUrlSubmit = async (url: string) => {
+    if (!url.trim()) return;
+    
+    try {
+      const track = await searchSoundCloudByUrl(url);
+      if (track) {
+        const savedTrack = await createTrack({
+          platform: track.platform,
+          platformId: track.platformId,
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          thumbnail: track.thumbnail,
+          url: track.url,
+          embedUrl: track.embedUrl,
+          coverArtUrl: track.coverArtUrl,
+          addedAt: track.addedAt,
+          isFavorite: track.isFavorite ?? false,
+        });
+        
+        if (savedTrack) {
+          setLocalTracks(prev => [...prev, savedTrack]);
+          await playerManager.load(savedTrack);
+          await playerManager.play();
+          setNowPlaying(prev => ({
+            ...prev,
+            track: savedTrack,
+            isPlaying: true,
+          }));
+          setTurntablePlaybackState('playing');
+          await addToHistory(savedTrack.id);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || '트랙 추가 중 오류가 발생했습니다');
     }
   };
 
@@ -389,6 +489,18 @@ function App() {
     }
   };
 
+  // 큐에 추가
+  const handleAddToQueue = async (track: Track) => {
+    try {
+      await addToQueue(track.id);
+      setError('Added to queue');
+      setTimeout(() => setError(null), 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add to queue';
+      setError(message);
+    }
+  };
+
   // 재생/일시정지 토글
   const handlePlayPause = async () => {
     try {
@@ -461,6 +573,20 @@ function App() {
     setSetting('dynamicVinylLabel', String(!turntableSettings.dynamicVinylLabel));
   };
 
+  // 셔플 토글
+  const handleShuffleToggle = async () => {
+    const newShuffle = playerManager.toggleShuffle();
+    await setShuffle(newShuffle);
+    setNowPlaying(prev => ({ ...prev, shuffle: newShuffle }));
+  };
+
+  // 반복 모드 토글
+  const handleRepeatToggle = async () => {
+    const newRepeat = playerManager.cycleRepeat();
+    await setRepeat(newRepeat);
+    setNowPlaying(prev => ({ ...prev, repeat: newRepeat }));
+  };
+
   // 컴포넌트 언마운트 시 플레이어 정리
   useEffect(() => {
     return () => {
@@ -476,6 +602,7 @@ function App() {
         onViewChange={setCurrentView}
         currentMode={currentMode}
         onModeChange={(mode) => setCurrentMode(mode)}
+        queueLength={queue.length}
       />
       
       {/* SoundCloud Player Container (숨겨진 위젯용) */}
@@ -514,6 +641,8 @@ function App() {
               platformFilter={platformFilter}
               onPlatformFilter={setPlatformFilter}
               onSoundCloudTrackAdded={handleSoundCloudTrackAdded}
+              onYouTubeSearch={handleYouTubeSearch}
+              onSoundCloudUrlSubmit={handleSoundCloudUrlSubmit}
             />
             
             {/* 컨텐츠 영역 */}
@@ -587,6 +716,17 @@ function App() {
               onPlayPause={handlePlayPause}
               onNext={handleNext}
               onPrevious={handlePrevious}
+              onShuffleToggle={handleShuffleToggle}
+              onRepeatToggle={handleRepeatToggle}
+              onQueueToggle={() => setQueuePanelOpen(true)}
+            />
+
+            {/* 큐 패널 */}
+            <QueuePanel
+              isOpen={queuePanelOpen}
+              onClose={() => setQueuePanelOpen(false)}
+              nowPlaying={nowPlaying.track}
+              onPlayTrack={handleTrackClick}
             />
           </>
         )}

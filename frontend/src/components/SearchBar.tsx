@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './SearchBar.css';
-import { PlatformFilter, PlatformSearchResult } from '../types';
+import { PlatformFilter, PlatformSearchResult, Track } from '../types';
 import { validateSoundCloudUrl, fetchSoundCloudTrackByUrl } from '../services/platformAdapter';
+import { searchYouTubeTracks, searchSoundCloudByUrl } from '../services/tauriApi';
 
 interface SearchBarProps {
   value: string;
@@ -10,15 +11,16 @@ interface SearchBarProps {
   onPlatformFilter: (platform: PlatformFilter) => void;
   placeholder?: string;
   className?: string;
+  onTrackAdded?: (track: Track) => void;
   onSoundCloudTrackAdded?: (track: PlatformSearchResult) => void;
+  onYouTubeSearch?: (query: string) => void;
+  onSoundCloudUrlSubmit?: (url: string) => void;
 }
 
+// 현재 지원하는 플랫폼 (Spotify, Bandcamp 비활성화 - API 미연동)
 const platforms = [
-  { id: 'all', label: 'All' },
   { id: 'youtube', label: 'YouTube' },
   { id: 'soundcloud', label: 'SoundCloud' },
-  { id: 'spotify', label: 'Spotify' },
-  { id: 'bandcamp', label: 'BandCamp' },
 ];
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -26,13 +28,28 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   platformFilter,
   onPlatformFilter,
-  placeholder = 'Search music...',
+  placeholder = '검색...',
   className = '',
+  onTrackAdded,
   onSoundCloudTrackAdded,
+  onYouTubeSearch,
+  onSoundCloudUrlSubmit,
 }) => {
   const [soundcloudUrl, setSoundcloudUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Platform toggle handler
+  const handlePlatformToggle = () => {
+    const nextPlatform = platformFilter === 'youtube' ? 'soundcloud' : 'youtube';
+    onPlatformFilter(nextPlatform);
+    
+    // Reset URL input when switching to SoundCloud
+    if (nextPlatform === 'soundcloud') {
+      setSoundcloudUrl('');
+      setUrlError(null);
+    }
+  };
 
   const handleSoundCloudSubmit = async () => {
     const trimmedUrl = soundcloudUrl.trim();
@@ -56,6 +73,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       if (onSoundCloudTrackAdded) {
         onSoundCloudTrackAdded(track);
       }
+      if (onTrackAdded) {
+        // PlatformSearchResult를 Track으로 변환
+        onTrackAdded({
+          id: Date.now().toString(),
+          platform: 'soundcloud',
+          platformId: 'placeholder',
+          title: track.title,
+          artist: track.artist,
+          album: track.album,
+          duration: track.duration,
+          thumbnail: track.thumbnail,
+          url: track.url,
+          embedUrl: track.embedUrl,
+          isPlayable: true,
+          addedAt: new Date().toISOString(),
+        });
+      }
       setSoundcloudUrl('');
     } catch (err: any) {
       setUrlError(err.message || '트랙 조회에 실패했습니다');
@@ -70,63 +104,80 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  const getCurrentPlatform = () => {
+    return platforms.find(p => p.id === platformFilter) || platforms[0];
+  };
+
   return (
     <div className={`vw-search-bar ${className}`} role="search">
-      {platformFilter === 'soundcloud' ? (
-        <>
-          <input
-            type="text"
-            className="vw-search-bar__input"
-            value={soundcloudUrl}
-            onChange={(e) => {
-              setSoundcloudUrl(e.target.value);
-              setUrlError(null);
-            }}
-            onKeyPress={handleKeyPress}
-            placeholder="SoundCloud 트랙 URL을 붙여넣기 (예: https://soundcloud.com/artist/track)"
-            aria-label="SoundCloud track URL"
-          />
-          <button
-            className="vw-search-bar__submit"
-            onClick={handleSoundCloudSubmit}
-            disabled={submitting}
-            aria-label="Add SoundCloud track"
-          >
-            {submitting ? '등록중...' : '트랙 추가'}
-          </button>
-          {urlError && (
-            <div className="vw-search-bar__error" role="alert">
-              {urlError}
+      {/* Platform toggle button - left side */}
+      <button
+        className="vw-search-bar__platform-btn"
+        onClick={handlePlatformToggle}
+        aria-label={`Switch to ${platformFilter === 'youtube' ? 'SoundCloud' : 'YouTube'}`}
+        title={`${getCurrentPlatform().label} 모드`}
+      >
+        {getCurrentPlatform().label}
+      </button>
+      
+      {/* Search input area - right side */}
+      <div className="vw-search-bar__input-area">
+        {platformFilter === 'soundcloud' ? (
+          <>
+            <input
+              type="text"
+              className="vw-search-bar__input"
+              value={soundcloudUrl}
+              onChange={(e) => {
+                setSoundcloudUrl(e.target.value);
+                setUrlError(null);
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder="SoundCloud 트랙 URL을 붙여넣기 (예: https://soundcloud.com/artist/track)"
+              aria-label="SoundCloud track URL"
+            />
+            <button
+              className="vw-search-bar__submit"
+              onClick={() => {
+                if (onSoundCloudUrlSubmit) {
+                  onSoundCloudUrlSubmit(soundcloudUrl);
+                  setSoundcloudUrl('');
+                } else {
+                  handleSoundCloudSubmit();
+                }
+              }}
+              disabled={submitting}
+              aria-label="Add SoundCloud track"
+            >
+              {submitting ? '등록중...' : '트랙 추가'}
+            </button>
+            {urlError && (
+              <div className="vw-search-bar__error" role="alert">
+                {urlError}
+              </div>
+            )}
+            <div className="vw-search-bar__note">
+              SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다.
             </div>
-          )}
-          <div className="vw-search-bar__note">
-            SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다.
-          </div>
-        </>
-      ) : (
-        <>
-          <input
-            type="search"
-            className="vw-search-bar__input"
-            value={value}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder={placeholder}
-            aria-label="Search music"
-          />
-          <select
-            className="vw-search-bar__filter"
-            value={platformFilter}
-            onChange={(e) => onPlatformFilter(e.target.value as PlatformFilter)}
-            aria-label="Filter by platform"
-          >
-            {platforms.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            <input
+              type="search"
+              className="vw-search-bar__input"
+              value={value}
+              onChange={(e) => {
+                onSearch(e.target.value);
+                if (onYouTubeSearch) {
+                  onYouTubeSearch(e.target.value);
+                }
+              }}
+              placeholder={placeholder}
+              aria-label="Search music"
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 };

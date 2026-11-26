@@ -94,3 +94,18 @@
 .vw-mini-player__play:hover {
   transform: scale(1.05);
 }
+
+.vw-mini-player__btn--active {
+  background: var(--vw-amber-bg);
+  color: var(--vw-amber-dark);
+}
+
+.vw-mini-player__shuffle.vw-mini-player__btn--active,
+.vw-mini-player__repeat.vw-mini-player__btn--active {
+  background: var(--vw-gradient-amber);
+  color: var(--vw-black-primary);
+}
+
+.vw-mini-player__queue {
+  font-size: 16px;
+}

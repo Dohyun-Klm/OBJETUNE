@@ -55,6 +55,10 @@ class PlayerManager implements PlayerManagerInterface {
   private youtubeApiLoaded: boolean = false;
   private soundcloudApiLoaded: boolean = false;
 
+  // 셔플/반복 상태
+  private shuffle: boolean = false;
+  private repeat: 'off' | 'one' | 'all' = 'off';
+
   /**
    * 현재 트랙 로드 및 플랫폼 어댑터 전환
    */
@@ -531,6 +535,40 @@ class PlayerManager implements PlayerManagerInterface {
   // 현재 오류
   getError(): string | null {
     return this.error;
+  }
+
+  // 셔플 모드
+  getShuffle(): boolean {
+    return this.shuffle;
+  }
+
+  setShuffle(enabled: boolean): void {
+    this.shuffle = enabled;
+    this.notify('shuffleChange', { shuffle: this.shuffle });
+  }
+
+  toggleShuffle(): boolean {
+    this.shuffle = !this.shuffle;
+    this.notify('shuffleChange', { shuffle: this.shuffle });
+    return this.shuffle;
+  }
+
+  // 반복 모드
+  getRepeat(): 'off' | 'one' | 'all' {
+    return this.repeat;
+  }
+
+  setRepeat(mode: 'off' | 'one' | 'all'): void {
+    this.repeat = mode;
+    this.notify('repeatChange', { repeat: this.repeat });
+  }
+
+  cycleRepeat(): 'off' | 'one' | 'all' {
+    const modes: Array<'off' | 'one' | 'all'> = ['off', 'one', 'all'];
+    const currentIndex = modes.indexOf(this.repeat);
+    this.repeat = modes[(currentIndex + 1) % modes.length];
+    this.notify('repeatChange', { repeat: this.repeat });
+    return this.repeat;
   }
 }
 
