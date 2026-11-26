@@ -3,13 +3,15 @@
 
 use axum::{
     routing::{get, Router},
-    Extension,
-    Json,
+    Extension, Json,
 };
-use tower_http::cors::{CorsLayer, Any};
+use tower_http::cors::{CorsLayer, AllowOrigin, AllowMethods, AllowHeaders};
 use dotenvy::dotenv;
-use std::{env, net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc, time::{Duration, Instant}};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::RwLock;
+use axum::http::HeaderName;
 
 mod routes;
 pub use routes::*;
@@ -17,6 +19,7 @@ pub use routes::*;
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub youtube_api_key: Option<String>,
+    pub cache: Arc<YouTubeSearchCache>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,11 +29,103 @@ pub struct ErrorResponse {
     pub error_code: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct YouTubeSearchResult {
+    pub results: Vec<YouTubeVideo>,
+    pub total_results: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct YouTubeVideo {
+    pub video_id: String,
+    pub title: String,
+    pub channel_title: String,
+    pub thumbnail: String,
+    pub video_url: String,
+    pub duration_seconds: Option<u32>,
+    pub published_at: String,
+    pub view_count: Option<u64>,
+}
+
 async fn health_check() -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "status": "healthy",
         "service": "objetune-api"
     }))
+}
+
+/// YouTube 검색 결과 캐시 (5분 TTL)
+pub struct YouTubeSearchCache {
+    cache: RwLock<HashMap<String, CacheEntry>>,
+    ttl: Duration,
+}
+
+impl std::fmt::Debug for YouTubeSearchCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("YouTubeSearchCache")
+            .field("ttl", &self.ttl)
+            .finish()
+    }
+}
+
+impl std::clone::Clone for YouTubeSearchCache {
+    fn clone(&self) -> Self {
+        Self {
+            cache: RwLock::new(self.cache.read().unwrap().clone()),
+            ttl: self.ttl,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct CacheEntry {
+    data: YouTubeSearchResult,
+    expires_at: Instant,
+}
+
+impl YouTubeSearchCache {
+    pub fn new(ttl_seconds: u64) -> Self {
+        Self {
+            cache: RwLock::new(HashMap::new()),
+            ttl: Duration::from_secs(ttl_seconds),
+        }
+    }
+
+    fn make_key(query: &str, limit: u32) -> String {
+        format!("{}:{}", query.to_lowercase(), limit)
+    }
+
+    pub fn get(&self, query: &str, limit: u32) -> Option<YouTubeSearchResult> {
+        let key = Self::make_key(query, limit);
+        let cache = self.cache.read().unwrap();
+        
+        cache.get(&key).and_then(|entry| {
+            if entry.expires_at > Instant::now() {
+                Some(entry.data.clone())
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn set(&self, query: &str, limit: u32, data: YouTubeSearchResult) {
+        let key = Self::make_key(query, limit);
+        let mut cache = self.cache.write().unwrap();
+        
+        // 캐시 크기 제한 (100개 초과 시 오래된 항목 정리)
+        if cache.len() >= 100 {
+            cache.retain(|_, entry| entry.expires_at > Instant::now());
+        }
+        
+        let expires_at = Instant::now() + self.ttl;
+        cache.insert(key, CacheEntry { data, expires_at });
+    }
+}
+
+impl Default for YouTubeSearchCache {
+    fn default() -> Self {
+        Self::new(300) // 5분 TTL
+    }
 }
 
 #[tokio::main]
@@ -54,13 +149,27 @@ async fn main() {
         tracing::info!("YouTube API 키가 성공적으로 로드되었습니다.");
     }
 
-    let app_state = Arc::new(AppState { youtube_api_key });
+    // 캐시 및 앱 상태 생성
+    let cache = Arc::new(YouTubeSearchCache::new(300)); // 5분 TTL
+    let app_state = Arc::new(AppState { youtube_api_key, cache });
 
-    // CORS 설정 (개발용 - 프로덕션에서는 도메인 제한 필요)
+    // CORS 설정 - Tauri 데스크탑 앱 및 React devOrigin 허용
+    // Production에서는 CORS_ORIGINS 환경변수로 허용할 도메인 목록을 콤마로 구분하여 설정
+    let cors_origins: Vec<_> = env::var("CORS_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:3000,http://127.0.0.1:3000,tauri://localhost".to_string())
+        .split(',')
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.trim().parse().unwrap())
+        .collect();
+    
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_origin(AllowOrigin::list(cors_origins.into_iter()))
+        .allow_methods(AllowMethods::list([axum::http::Method::GET, axum::http::Method::OPTIONS].into_iter()))
+        .allow_headers(AllowHeaders::list([
+            HeaderName::from_static("content-type"),
+            HeaderName::from_static("authorization"),
+        ].into_iter()))
+        .allow_credentials(true);
 
     // 라우터 설정
     let app = Router::new()

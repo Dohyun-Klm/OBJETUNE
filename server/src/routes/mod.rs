@@ -3,12 +3,3 @@
 
 pub mod youtube;
 pub mod soundcloud;
-
-use serde::Serialize;
-
-#[derive(Debug, Serialize)]
-pub struct ErrorResponse {
-    pub message: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-}

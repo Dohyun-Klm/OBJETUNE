@@ -6,27 +6,10 @@ use axum::{
     Json,
     http::StatusCode,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
-use crate::{AppState, ErrorResponse};
-
-#[derive(Debug, Clone, Serialize)]
-pub struct YouTubeSearchResult {
-    pub results: Vec<YouTubeVideo>,
-    pub total_results: usize,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct YouTubeVideo {
-    pub video_id: String,
-    pub title: String,
-    pub channel_title: String,
-    pub thumbnail: String,
-    pub video_url: String,
-    pub duration_seconds: Option<u32>,
-    pub published_at: String,
-    pub view_count: Option<u64>,
-}
+use std::time::Duration;
+use crate::{AppState, ErrorResponse, YouTubeSearchResult, YouTubeVideo};
 
 #[derive(Deserialize)]
 pub struct SearchQuery {
@@ -73,6 +56,7 @@ fn parse_iso_duration(duration: &str) -> Option<u32> {
 struct YouTubeApiClient {
     api_key: String,
     base_url: &'static str,
+    client: reqwest::Client,
 }
 
 impl YouTubeApiClient {
@@ -80,13 +64,16 @@ impl YouTubeApiClient {
         Self {
             api_key,
             base_url: "https://www.googleapis.com/youtube/v3",
+            // 10초 타임아웃 설정
+            client: reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
+                .unwrap(),
         }
     }
 
     /// 영상 검색
     async fn search_videos(&self, query: &str, limit: u32) -> Result<Vec<YouTubeVideo>, String> {
-        let client = reqwest::Client::new();
-        
         let params = [
             ("part", "snippet"),
             ("q", query),
@@ -98,12 +85,18 @@ impl YouTubeApiClient {
 
         let url = format!("{}/search", self.base_url);
         
-        let response = client
+        let response = self.client
             .get(&url)
             .query(&params)
             .send()
             .await
-            .map_err(|e| format!("API 요청 실패: {}", e))?;
+            .map_err(|e| {
+                if e.is_timeout() {
+                    "YouTube API 요청 시간 초과".to_string()
+                } else {
+                    format!("API 요청 실패: {}", e)
+                }
+            })?;
 
         let status = response.status();
         
@@ -131,8 +124,6 @@ impl YouTubeApiClient {
 
     /// 영상 상세 정보 조회
     async fn get_video_details(&self, video_id: &str) -> Result<YouTubeVideo, String> {
-        let client = reqwest::Client::new();
-        
         let params = [
             ("part", "snippet,contentDetails,statistics"),
             ("id", video_id),
@@ -141,12 +132,18 @@ impl YouTubeApiClient {
 
         let url = format!("{}/videos", self.base_url);
         
-        let response = client
+        let response = self.client
             .get(&url)
             .query(&params)
             .send()
             .await
-            .map_err(|e| format!("API 요청 실패: {}", e))?;
+            .map_err(|e| {
+                if e.is_timeout() {
+                    "영상 상세 정보 요청 시간 초과".to_string()
+                } else {
+                    format!("API 요청 실패: {}", e)
+                }
+            })?;
 
         let status = response.status();
         
@@ -237,6 +234,12 @@ pub async fn search(
 
     let limit = params.limit.min(50).max(1);
 
+    // 캐시 확인
+    if let Some(cached) = state.cache.get(&params.q, limit) {
+        tracing::debug!("검색 결과 캐시 히트: {}", params.q);
+        return Ok(Json(cached));
+    }
+
     // API 키 확인
     let api_key = state.youtube_api_key.clone()
         .ok_or_else(|| (
@@ -252,6 +255,13 @@ pub async fn search(
     match client.search_videos(&params.q, limit).await {
         Ok(videos) => {
             let total = videos.len();
+            
+            // 캐시에 저장
+            state.cache.set(&params.q, limit, YouTubeSearchResult {
+                results: videos.clone(),
+                total_results: total,
+            });
+            
             Ok(Json(YouTubeSearchResult {
                 results: videos,
                 total_results: total,
@@ -267,11 +277,19 @@ pub async fn search(
                         error_code: Some("QUOTA_EXCEEDED".to_string()),
                     }),
                 ))
+            } else if e.contains("시간 초과") {
+                Err((
+                    StatusCode::REQUEST_TIMEOUT,
+                    Json(ErrorResponse {
+                        message: "요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.".to_string(),
+                        error_code: Some("TIMEOUT".to_string()),
+                    }),
+                ))
             } else {
                 Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
-                        message: e,
+                        message: "검색 중 오류가 발생했습니다".to_string(),
                         error_code: None,
                     }),
                 ))
@@ -318,11 +336,19 @@ pub async fn get_video(
                         error_code: Some("VIDEO_NOT_FOUND".to_string()),
                     }),
                 ))
+            } else if e.contains("시간 초과") {
+                Err((
+                    StatusCode::REQUEST_TIMEOUT,
+                    Json(ErrorResponse {
+                        message: "요청 시간이 초과되었습니다".to_string(),
+                        error_code: Some("TIMEOUT".to_string()),
+                    }),
+                ))
             } else {
                 Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(ErrorResponse {
-                        message: e,
+                        message: "영상 조회 중 오류가 발생했습니다".to_string(),
                         error_code: None,
                     }),
                 ))
