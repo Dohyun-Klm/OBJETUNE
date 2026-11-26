@@ -1292,8 +1292,10 @@ async fn search_youtube_tracks(query: String, limit: Option<u32>) -> Result<Vec<
     let api_key = std::env::var("YOUTUBE_API_KEY")
         .map_err(|_| ErrorResponse { message: "YouTube API key not configured".to_string() })?;
     
+    eprintln!("[DEBUG] YouTube search query: {}, API key prefix: {}", query, &api_key[..8.min(api_key.len())]);
+    
     let limit_val = limit.unwrap_or(10).min(50);
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::Client::new();
 
     // 1차: 음악 카테고리(videoCategoryId=10) 검색
     let url_music = format!(
@@ -1307,6 +1309,7 @@ async fn search_youtube_tracks(query: String, limit: Option<u32>) -> Result<Vec<
 
     // 결과가 없으면 2차: 일반 검색(카테고리 제한 없음) 폴백
     if results.is_empty() {
+        eprintln!("[DEBUG] Music category search empty, falling back to general search");
         let url_general = format!(
             "https://www.googleapis.com/youtube/v3/search?part=snippet&q={}&type=video&maxResults={}&key={}",
             urlencoding::encode(&query),
@@ -1319,21 +1322,29 @@ async fn search_youtube_tracks(query: String, limit: Option<u32>) -> Result<Vec<
     Ok(results)
 }
 
-async fn fetch_youtube_results(client: &reqwest::blocking::Client, url: &str) -> Result<Vec<TrackResponse>, ErrorResponse> {
+async fn fetch_youtube_results(client: &reqwest::Client, url: &str) -> Result<Vec<TrackResponse>, ErrorResponse> {
+    eprintln!("[DEBUG] YouTube API request: {}", url);
     let response: serde_json::Value = client
         .get(url)
         .send()
-        .map_err(|e| ErrorResponse { 
-            message: format!("YouTube API request failed: {}", e) 
+        .await
+        .map_err(|e| {
+            eprintln!("[ERROR] YouTube API request failed: {}", e);
+            ErrorResponse { message: format!("YouTube API request failed: {}", e) }
         })?
         .json()
-        .map_err(|e| ErrorResponse { 
-            message: format!("Failed to parse YouTube API response: {}", e) 
+        .await
+        .map_err(|e| {
+            eprintln!("[ERROR] Failed to parse YouTube API response: {}", e);
+            ErrorResponse { message: format!("Failed to parse YouTube API response: {}", e) }
         })?;
+
+    eprintln!("[DEBUG] YouTube API response: {}", response.to_string().chars().take(500).collect::<String>());
 
     let mut results = Vec::new();
 
     if let Some(items) = response.get("items").and_then(|i| i.as_array()) {
+        eprintln!("[DEBUG] YouTube API returned {} items", items.len());
         for item in items {
             if let (Some(snippet), Some(id_obj)) = (item.get("snippet"), item.get("id")) {
                 let video_id = id_obj.get("videoId").and_then(|v| v.as_str()).unwrap_or("");
@@ -1357,6 +1368,8 @@ async fn fetch_youtube_results(client: &reqwest::blocking::Client, url: &str) ->
                 results.push(track);
             }
         }
+    } else {
+        eprintln!("[DEBUG] No items in YouTube API response");
     }
 
     Ok(results)
