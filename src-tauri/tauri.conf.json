@@ -12,11 +12,18 @@
     "windows": [
       {
         "title": "OBJETUNE",
-        "url": "http://localhost:3000",
         "width": 800,
         "height": 600,
+        "minWidth": 400,
+        "minHeight": 300,
+        "maxWidth": 2560,
+        "maxHeight": 1440,
         "resizable": true,
         "fullscreen": false,
+        "alwaysOnTop": false,
+        "focusable": true,
+        "decorations": true,
+        "transparent": false,
         "devtools": true
       }
     ],
@@ -32,6 +39,9 @@
       "icons/128x128@2x.png",
       "icons/512x512.png",
       "icons/1024x1024.png"
-    ]
+    ],
+    "windows": {
+      "digestAlgorithm": "sha256"
+    }
   }
 }

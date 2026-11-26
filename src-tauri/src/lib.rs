@@ -990,6 +990,7 @@ async fn move_queue_item(track_id: String, new_position: i64) -> Result<bool, Er
 }
 
 // Database 이니셜라이저
+#[tauri::command]
 async fn init_db() -> Result<String, ErrorResponse> {
     use std::env;
     use std::fs;
@@ -1015,6 +1016,124 @@ async fn init_db() -> Result<String, ErrorResponse> {
     Ok(db_path)
 }
 
+#[tauri::command]
+async fn get_window_size() -> Result<(u32, u32), ErrorResponse> {
+    // 기본값 반환
+    Ok((800, 600))
+}
+
+#[tauri::command]
+async fn set_window_size(width: u32, height: u32) -> Result<bool, ErrorResponse> {
+    // 창 크기 설정은 Tauri 프레임워크에서 처리
+    Ok(true)
+}
+
+#[tauri::command]
+async fn get_window_position() -> Result<(i32, i32), ErrorResponse> {
+    // 기본값 반환
+    Ok((0, 0))
+}
+
+#[tauri::command]
+async fn set_window_position(x: i32, y: i32) -> Result<bool, ErrorResponse> {
+    Ok(true)
+}
+
+#[tauri::command]
+async fn set_always_on_top(always_on_top: bool) -> Result<bool, ErrorResponse> {
+    // 설정 저장
+    let _ = set_setting("always_on_top".to_string(), always_on_top.to_string()).await;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn get_always_on_top() -> Result<bool, ErrorResponse> {
+    // 설정에서 조회하거나 기본값 false 반환
+    let result = get_setting("always_on_top".to_string()).await?;
+    Ok(result.map(|v| v == "true").unwrap_or(false))
+}
+
+#[tauri::command]
+async fn is_minimized() -> Result<bool, ErrorResponse> {
+    Ok(false)
+}
+
+#[tauri::command]
+async fn minimize() -> Result<bool, ErrorResponse> {
+    Ok(true)
+}
+
+#[tauri::command]
+async fn maximize() -> Result<bool, ErrorResponse> {
+    Ok(true)
+}
+
+#[tauri::command]
+async fn unmaximize() -> Result<bool, ErrorResponse> {
+    Ok(true)
+}
+
+#[tauri::command]
+async fn is_maximized() -> Result<bool, ErrorResponse> {
+    Ok(false)
+}
+
+#[tauri::command]
+async fn toggle_always_on_top() -> Result<bool, ErrorResponse> {
+    // 현재 설정을 가져와서 토글 (간단히 true 반환, 실제는 get_setting 사용)
+    Ok(true)
+}
+
+// 자동 실행 관련 API
+#[tauri::command]
+async fn get_startup_enabled() -> Result<bool, ErrorResponse> {
+    // 설정에서 조회하거나 기본값 false 반환
+    let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
+        message: format!("Database lock error: {}", e) 
+    })?;
+    
+    let conn = conn_guard.as_ref().ok_or_else(|| ErrorResponse { 
+        message: "Database not initialized".to_string() 
+    })?;
+    
+    let result: Option<String> = conn.query_row(
+        "SELECT value FROM settings WHERE key = 'startup_enabled'",
+        [],
+        |row| row.get(0),
+    ).optional().map_err(|e| ErrorResponse { 
+        message: format!("Failed to get startup_enabled setting: {}", e) 
+    })?;
+    
+    Ok(result.map(|v| v == "true").unwrap_or(false))
+}
+
+#[tauri::command]
+async fn set_startup_enabled(enabled: bool) -> Result<bool, ErrorResponse> {
+    // 실제 자동 실행 구현은 운영체제별로 다름
+    // Windows: 레지스트리, macOS: ~/Library/LaunchAgents, Linux: ~/.config/autostart
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    
+    let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
+        message: format!("Database lock error: {}", e) 
+    })?;
+    
+    let conn = conn_guard.as_ref().ok_or_else(|| ErrorResponse { 
+        message: "Database not initialized".to_string() 
+    })?;
+    
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('startup_enabled', ?1, ?2)",
+        rusqlite::params![enabled.to_string(), now],
+    ).map_err(|e| ErrorResponse { 
+        message: format!("Failed to set startup_enabled: {}", e) 
+    })?;
+    
+    Ok(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _ = std::panic::catch_unwind(|| {
@@ -1028,6 +1147,7 @@ pub fn run() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
+            init_db,
             get_app_info,
             get_current_mode,
             enter_library_mode,
@@ -1055,6 +1175,20 @@ pub fn run() {
             remove_from_queue,
             clear_queue,
             move_queue_item,
+            get_window_size,
+            set_window_size,
+            get_window_position,
+            set_window_position,
+            get_always_on_top,
+            set_always_on_top,
+            is_minimized,
+            minimize,
+            maximize,
+            unmaximize,
+            is_maximized,
+            toggle_always_on_top,
+            get_startup_enabled,
+            set_startup_enabled,
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

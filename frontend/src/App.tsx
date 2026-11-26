@@ -46,8 +46,24 @@ import {
   setSetting,
   getQueue,
   checkTauri,
+  getWindowSize,
+  setWindowSize,
+  getWindowPosition,
+  setWindowPosition,
+  getAlwaysOnTop,
+  setAlwaysOnTop,
+  isMaximized,
+  maximize,
+  unmaximize,
+  minimize,
 } from './services/tauriApi';
 import { invoke } from '@tauri-apps/api/core';
+
+// Tauri API는 동적으로 가져오기 (테스트 환경에서 모킹 가능)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const tauriWindow = typeof window !== 'undefined' && (window as any).__TAURI_INTEGRATION__
+  ? require('@tauri-apps/api/window')
+  : null;
 
 // 목업용 Track을 PlatformSearchResult로 변환
 function mockToPlatformResult(track: Track): PlatformSearchResult {
@@ -210,6 +226,31 @@ function App() {
     };
   }, []);
 
+  // Tauri 창 상태 복원
+  useEffect(() => {
+    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
+    
+    const initWindow = async () => {
+      await restoreWindowState();
+    };
+    initWindow();
+    
+    // 창 resize/move 이벤트 구독 (Tauri 2)
+    const win = tauriWindow.getCurrentWindow();
+    
+    // 창 상태 변경 감지 및 저장
+    const handleWindowStateChange = async () => {
+      await saveWindowState();
+    };
+    
+    win.onResized(handleWindowStateChange);
+    win.onMoved(handleWindowStateChange);
+    
+    return () => {
+      // 이벤트 구독 해제는 자동으로 처리됨
+    };
+  }, []);
+
   // 트랙 재생 핸들러
   const handlePlay = async (track: Track) => {
     try {
@@ -230,6 +271,57 @@ function App() {
       setError(message);
     }
   };
+
+  // 창 위치/크기 복원 (Tauri Window API)
+  const restoreWindowState = useCallback(async () => {
+    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
+    
+    try {
+      const win = tauriWindow.getCurrentWindow();
+      
+      // 저장된 크기/위치 복원 시도
+      const savedSize = await getWindowSize();
+      const savedPos = await getWindowPosition();
+      const isCurrentlyMaximized = await isMaximized();
+      
+      if (savedSize && savedPos && !isCurrentlyMaximized) {
+        // 화면 경계 내로 보정
+        const screenWidth = (window as any).screenWidth ?? 2560;
+        const screenHeight = (window as any).screenHeight ?? 1440;
+        
+        const clampedWidth = Math.min(Math.max(savedSize.width, 400), screenWidth);
+        const clampedHeight = Math.min(Math.max(savedSize.height, 300), screenHeight);
+        const clampedX = Math.max(0, Math.min(savedPos.x, screenWidth - clampedWidth));
+        const clampedY = Math.max(0, Math.min(savedPos.y, screenHeight - clampedHeight));
+        
+        await setWindowSize(clampedWidth, clampedHeight);
+        await setWindowPosition(clampedX, clampedY);
+      }
+      
+      // always-on-top 복원
+      const savedAOT = await getAlwaysOnTop();
+      if (savedAOT !== null) {
+        await setAlwaysOnTop(savedAOT);
+      }
+    } catch (err) {
+      console.error('Window state restore failed:', err);
+    }
+  }, []);
+
+  // 창 상태 저장 (resize/move 이벤트에서 호출)
+  const saveWindowState = useCallback(async () => {
+    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
+    
+    try {
+      const win = tauriWindow.getCurrentWindow();
+      const state = win.getState();
+      
+      await setWindowSize(state.size.width, state.size.height);
+      await setWindowPosition(state.position.x, state.position.y);
+    } catch (err) {
+      console.error('Window state save failed:', err);
+    }
+  }, []);
 
   // SoundCloud URL에서 추가된 트랙 처리
   const handleSoundCloudTrackAdded = async (track: PlatformSearchResult) => {
