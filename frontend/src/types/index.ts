@@ -1,17 +1,18 @@
 /**
  * OBJETUNE 타입 정의
- * 모든 타입은 목업 데이터를 위한 것이며 실제 API와는 분리됨
+ * 모든 타입은 목업 데이터를 위한 것이며 실제 API과는 분리됨
  */
 
 // 음악 트랙
 export interface Track {
   id: string;
+  platform: 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
+  platformId?: string;  // 플랫폼별 고유 ID
   title: string;
   artist: string;
   album: string;
   duration: number; // 초 단위
   thumbnail: string; // 이미지 URL (목업)
-  platform: 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
   url: string; // 플레이리스트용 URL
   embedUrl: string; // IFrame 플레이어용 URL (YouTube IFrame, SoundCloud Widget)
   isPlayable: boolean;
@@ -36,8 +37,8 @@ export interface PlatformSearchResult {
   isPlayable: boolean;
 }
 
-// 플레이어 상태
-export type PlayerState = 'playing' | 'paused' | 'stopped' | 'loading' | 'error' | 'ended' | 'buffering';
+// 플레이어 상태 (재생 상태)
+export type PlaybackStatus = 'playing' | 'paused' | 'stopped' | 'loading' | 'error' | 'ended' | 'buffering';
 
 // 플레이어 이벤트
 export interface PlayerEvent {
@@ -45,8 +46,11 @@ export interface PlayerEvent {
   data?: any;
 }
 
+// 플랫폼 타입
+export type Platform = 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
+
 // 플래티폼 필터
-export type PlatformFilter = 'all' | 'youtube' | 'soundcloud' | 'spotify' | 'bandcamp';
+export type PlatformFilter = 'all' | Platform;
 
 // 라이브러리 뷰 상태
 export interface LibraryViewState {
@@ -109,18 +113,22 @@ export interface NowPlaying {
   duration: number;
 }
 
-// 플랫폼 검색 결과 인터페이스 (SearchBar용)
-export interface PlatformSearchResult {
-  id: string;
-  videoId?: string;  // YouTube 전용
-  title: string;
-  artist: string;
-  album: string;
+// Player Manager 상태
+export interface PlayerState {
+  currentTrack: Track | null;
+  platform: Platform | null;
+  isPlaying: boolean;
+  isBuffering: boolean;
+  currentTime: number;
   duration: number;
-  thumbnail: string;
-  platform: 'youtube' | 'soundcloud';
-  url: string;
-  embedUrl: string;
-  publishedAt?: string;
-  isPlayable: boolean;
+  volume: number;
+  isMuted: boolean;
+  error: string | null;
+  isLoading: boolean;
+}
+
+// Queue 아이템
+export interface QueueItem {
+  track: Track;
+  addedAt: string;
 }

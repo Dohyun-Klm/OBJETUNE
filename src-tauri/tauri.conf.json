@@ -16,7 +16,8 @@
         "width": 800,
         "height": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "devtools": true
       }
     ],
     "security": {
@@ -24,7 +25,6 @@
     }
   },
   "bundle": {
-    "active": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",

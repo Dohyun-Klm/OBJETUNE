@@ -20,7 +20,7 @@ export interface PlatformSearchResult {
   isPlayable: boolean;
 }
 
-export type PlayerState = 'stopped' | 'playing' | 'paused' | 'buffering' | 'loading' | 'error' | 'ended';
+export type PlaybackStatus = 'stopped' | 'playing' | 'paused' | 'buffering' | 'loading' | 'error' | 'ended';
 
 // 이벤트 페이스
 interface EventCallback {
@@ -38,7 +38,7 @@ export interface PlatformAdapter {
   play(): Promise<void>;
   pause(): Promise<void>;
   stop(): Promise<void>;
-  getState(): Promise<PlayerState>;
+  getState(): Promise<PlaybackStatus>;
   setVolume(volume: number): Promise<void>;
   getDuration(): Promise<number>;
   getCurrentTime(): Promise<number>;
@@ -65,15 +65,16 @@ class YouTubeAdapter implements PlatformAdapter {
       const data = await response.json();
       
       return data.results.map((item: any) => ({
-        id: item.videoId || item.id,
+        id: item.video_id,
+        videoId: item.video_id,
         title: item.title,
-        artist: item.channelTitle,
+        artist: item.channel_title,
         album: '',
         duration: item.duration_seconds || 0,
         thumbnail: item.thumbnail,
         platform: 'youtube' as Platform,
-        url: item.video_url || `https://www.youtube.com/watch?v=${item.videoId}`,
-        embedUrl: `https://www.youtube.com/embed/${item.videoId}`,
+        url: item.video_url,
+        embedUrl: `https://www.youtube.com/embed/${item.video_id}`,
         publishedAt: item.published_at,
         isPlayable: true,
       }));
@@ -157,7 +158,7 @@ class YouTubeAdapter implements PlatformAdapter {
 
   private handleStateChange(event: any): void {
     const state = event.data;
-    let playerState: PlayerState = 'stopped';
+    let playerState: PlaybackStatus = 'stopped';
     
     switch (state) {
       case 1: playerState = 'playing'; break;
@@ -171,7 +172,7 @@ class YouTubeAdapter implements PlatformAdapter {
   }
 
   private handleError(event: any): void {
-    const playerState: PlayerState = 'error';
+    const playerState: PlaybackStatus = 'error';
     this.notify('error', { 
       message: `YouTube 재생 오류: ${event.data}`,
       state: playerState 
@@ -196,7 +197,7 @@ class YouTubeAdapter implements PlatformAdapter {
     }
   }
 
-  async getState(): Promise<PlayerState> {
+  async getState(): Promise<PlaybackStatus> {
     if (!this.player) return 'stopped';
     
     const state = this.player.getPlayerState();
@@ -341,7 +342,7 @@ class SoundCloudAdapter implements PlatformAdapter {
     }
   }
 
-  async getState(): Promise<PlayerState> {
+  async getState(): Promise<PlaybackStatus> {
     if (!this.widget) return 'stopped';
     
     const mode = this.widget.getCurrentState();
