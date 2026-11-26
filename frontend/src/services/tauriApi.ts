@@ -34,10 +34,11 @@ export async function checkTauri(): Promise<boolean> {
       await invoke('get_app_info');
       isTauriAvailable = true;
     } catch {
-      isTauriAvailable = false;
+      // Don't cache negative result - backend might not be ready yet
+      return false;
     }
   }
-  return isTauriAvailable;
+  return isTauriAvailable === true;
 }
 
 // Track API

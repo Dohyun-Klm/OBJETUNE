@@ -1,7 +1,7 @@
 //! SQLite 데이터베이스 저장소
 //! 로컬 메타데이터 및 사용자 컬렉션 관리
 
-use rusqlite::{Connection, Result as SqlResult, params, OptionalExtension};
+use rusqlite::{Connection, Result as SqlResult, params};
 use serde::{Serialize, Deserialize};
 use std::sync::Mutex;
 use once_cell::sync::Lazy;

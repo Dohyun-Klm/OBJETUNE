@@ -5,11 +5,9 @@
 //! - 데이터 모델
 //! - 플랫폼 연동
 
-use tauri::command;
 use serde::{Deserialize, Serialize};
 
 /// 앱 정보를 반환하는 명령어
-#[command]
 pub fn get_app_info() -> AppInfo {
     AppInfo {
         name: env!("CARGO_PKG_NAME").to_string(),
@@ -19,19 +17,16 @@ pub fn get_app_info() -> AppInfo {
 }
 
 /// 현재 모드를 반환하는 명령어
-#[command]
 pub fn get_current_mode() -> String {
     "library".to_string()
 }
 
 /// 라이브러리 모드 진입 (실제 구현됨)
-#[command]
 pub fn enter_library_mode() -> Result<String, String> {
     Ok("Library mode activated".to_string())
 }
 
 /// 튜urnplate Mode 진입 (미구현)
-#[command]
 pub fn enter_turntable_mode() -> Result<String, String> {
     Err("Turntable Mode is not yet implemented".to_string())
 }

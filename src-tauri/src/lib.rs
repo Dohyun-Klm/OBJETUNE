@@ -1133,6 +1133,11 @@ async fn load_window_state(app: tauri::AppHandle) -> Result<bool, ErrorResponse>
     if let Some(state_str) = result {
         if let Ok(state) = serde_json::from_str::<serde_json::Value>(&state_str) {
             if let Some(window) = app.get_webview_window("main") {
+                // 창이 숨겨져 있다면 복원하지 않음 (자동 시작 시점의 상태 유지)
+                if !window.is_visible().map_err(|e| ErrorResponse { message: e.to_string() })? {
+                    return Ok(true);
+                }
+                
                 if let (Some(x), Some(y), Some(w), Some(h)) = (
                     state.get("x").and_then(|v| v.as_i64()),
                     state.get("y").and_then(|v| v.as_i64()),
@@ -1168,28 +1173,77 @@ async fn get_always_on_top() -> Result<bool, ErrorResponse> {
 }
 
 #[tauri::command]
-async fn is_minimized() -> Result<bool, ErrorResponse> {
-    Ok(false)
+async fn is_minimized(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.is_minimized().map_err(|e| ErrorResponse { message: e.to_string() })
+    } else {
+        Ok(false)
+    }
 }
 
 #[tauri::command]
-async fn minimize() -> Result<bool, ErrorResponse> {
-    Ok(true)
+async fn minimize(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        let minimize_to_tray = get_minimize_to_tray_setting().await.unwrap_or(true);
+        
+        if minimize_to_tray {
+            window.hide().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        } else {
+            window.minimize().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        }
+        Ok(true)
+    } else {
+        Ok(true)
+    }
+}
+
+async fn get_minimize_to_tray_setting() -> Result<bool, ErrorResponse> {
+    let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
+        message: format!("Database lock error: {}", e) 
+    })?;
+    
+    let conn = conn_guard.as_ref().ok_or_else(|| ErrorResponse { 
+        message: "Database not initialized".to_string() 
+    })?;
+    
+    let result: Option<String> = conn.query_row(
+        "SELECT value FROM settings WHERE key = 'minimize_to_tray'",
+        [],
+        |row| row.get(0),
+    ).optional().map_err(|e| ErrorResponse { 
+        message: format!("Failed to get minimize_to_tray setting: {}", e) 
+    })?;
+    
+    Ok(result.map(|v| v == "true").unwrap_or(true))
 }
 
 #[tauri::command]
-async fn maximize() -> Result<bool, ErrorResponse> {
-    Ok(true)
+async fn maximize(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.maximize().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        Ok(true)
+    } else {
+        Ok(true)
+    }
 }
 
 #[tauri::command]
-async fn unmaximize() -> Result<bool, ErrorResponse> {
-    Ok(true)
+async fn unmaximize(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.unmaximize().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        Ok(true)
+    } else {
+        Ok(true)
+    }
 }
 
 #[tauri::command]
-async fn is_maximized() -> Result<bool, ErrorResponse> {
-    Ok(false)
+async fn is_maximized(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.is_maximized().map_err(|e| ErrorResponse { message: e.to_string() })
+    } else {
+        Ok(false)
+    }
 }
 
 #[tauri::command]
@@ -1413,7 +1467,7 @@ async fn search_soundcloud_by_url(url: String) -> Result<TrackResponse, ErrorRes
 
 // 자동 실행 관련 API
 #[tauri::command]
-async fn get_startup_enabled() -> Result<bool, ErrorResponse> {
+async fn get_startup_enabled(_app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
     // 설정에서 조회하거나 기본값 false 반환
     let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
         message: format!("Database lock error: {}", e) 
@@ -1543,22 +1597,29 @@ pub fn run() {
         )
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            Some(vec!["--minimized"]),
+            None,  // --minimized 플래그 제거: 앱 시작 시 창이 보이도록
         ))
         .setup(|app| {
             // 시스템 트레이 생성
-            let tray = tauri::tray::TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+            let icon = app.default_window_icon()
+                .map(|i| i.clone())
+                .unwrap_or_else(|| tauri::include_image!("icons/icon.png"));
+            
+            let _tray = tauri::tray::TrayIconBuilder::new()
+                .icon(icon)
+                .tooltip(" OBJETUNE")
                 .menu(&tauri::menu::MenuBuilder::new(app)
                     .item(&tauri::menu::MenuItem::with_id(app, "show", "보이기", true, None::<&str>)?)
                     .item(&tauri::menu::MenuItem::with_id(app, "hide", "숨기기", true, None::<&str>)?)
                     .separator()
                     .item(&tauri::menu::MenuItem::with_id(app, "quit", "종료", true, None::<&str>)?)
                     .build()?)
+                .show_menu_on_left_click(false)  // 왼쪽 클릭시 메뉴 대신 토글 동작
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();
+                            let _ = window.unminimize();
                             let _ = window.set_focus();
                         }
                     }
@@ -1573,29 +1634,37 @@ pub fn run() {
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
-                    if let tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
-                        if let Some(app) = tray.app_handle().get_webview_window("main") {
-                            if app.is_visible().unwrap_or(false) {
-                                let _ = app.hide();
+                    use tauri::tray::MouseButton;
+                    use tauri::tray::MouseButtonState;
+                    use tauri::tray::TrayIconEvent;
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event {
+                        if let Some(window) = tray.app_handle().get_webview_window("main") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
                             } else {
-                                let _ = app.show();
-                                let _ = app.set_focus();
+                                let _ = window.show();
+                                let _ = window.unminimize();
+                                let _ = window.set_focus();
                             }
                         }
                     }
                 })
-                .build(app)?;
+                .build(&app.handle().clone())?;
             
             // 창 상태 복원
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let _ = load_window_state(app_handle).await;
+                let _ = load_window_state(app_handle.clone()).await;
             });
             
             // 자동 실행 상태 확인 및 적용
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Ok(enabled) = get_startup_enabled().await {
+                if let Ok(enabled) = get_startup_enabled(app_handle.clone()).await {
                     if enabled {
                         let _ = app_handle.autolaunch().enable();
                     }
@@ -1662,10 +1731,11 @@ pub fn run() {
             search_soundcloud_by_url,
         ])
         .on_window_event(|window, event| {
-            // 창 상태 변경 시 자동 저장 (리사이즈/이동만 처리)
+            // 창 상태 변경 시 자동 저장 (리사이즈/이동 시 저장)
             if matches!(event, 
                 tauri::WindowEvent::Resized(_) | 
-                tauri::WindowEvent::Moved(_)
+                tauri::WindowEvent::Moved(_) |
+                tauri::WindowEvent::Focused(_)
             ) {
                 let app_handle = window.app_handle().clone();
                 tauri::async_runtime::spawn(async move {
