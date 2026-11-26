@@ -14,6 +14,8 @@ import {
   isMaximized,
   getStartupEnabled,
   setStartupEnabled,
+  getMinimizeToTray,
+  setMinimizeToTray,
 } from '../services/tauriApi';
 
 interface SettingsProps {
@@ -31,6 +33,7 @@ interface WindowState {
   alwaysOnTop: boolean;
   isMaximized: boolean;
   startupEnabled: boolean;
+  minimizeToTray: boolean;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -46,6 +49,7 @@ export const Settings: React.FC<SettingsProps> = ({
     alwaysOnTop: false,
     isMaximized: false,
     startupEnabled: false,
+    minimizeToTray: true,
   });
 
   const [showWindowSettings, setShowWindowSettings] = useState(false);
@@ -58,6 +62,7 @@ export const Settings: React.FC<SettingsProps> = ({
   useEffect(() => {
     loadWindowState();
     loadStartupState();
+    loadMinimizeToTrayState();
   }, []);
 
   const loadWindowState = async () => {
@@ -87,6 +92,14 @@ export const Settings: React.FC<SettingsProps> = ({
     setWindowState(prev => ({
       ...prev,
       startupEnabled: enabled,
+    }));
+  };
+
+  const loadMinimizeToTrayState = async () => {
+    const enabled = await getMinimizeToTray();
+    setWindowState(prev => ({
+      ...prev,
+      minimizeToTray: enabled,
     }));
   };
 
@@ -140,6 +153,14 @@ export const Settings: React.FC<SettingsProps> = ({
     setWindowState(prev => ({
       ...prev,
       startupEnabled: !prev.startupEnabled,
+    }));
+  };
+
+  const handleMinimizeToTrayToggle = async () => {
+    await setMinimizeToTray(!windowState.minimizeToTray);
+    setWindowState(prev => ({
+      ...prev,
+      minimizeToTray: !prev.minimizeToTray,
     }));
   };
 
@@ -307,6 +328,26 @@ export const Settings: React.FC<SettingsProps> = ({
               </label>
               <p className="vw-settings__description">
                 Automatically start OBJETUNE when Windows starts
+              </p>
+            </div>
+
+            {/* 트레이로 최소화 */}
+            <div className="vw-settings__item">
+              <h5 className="vw-settings__sub-title">Tray</h5>
+              <label className="vw-settings__label">
+                <input
+                  type="checkbox"
+                  checked={windowState.minimizeToTray}
+                  onChange={handleMinimizeToTrayToggle}
+                  className="vw-settings__checkbox"
+                  aria-label="Toggle minimize to tray"
+                />
+                <span className="vw-settings__label-text">
+                  Minimize to system tray
+                </span>
+              </label>
+              <p className="vw-settings__description">
+                Hide to tray instead of taskbar when minimized
               </p>
             </div>
           </>

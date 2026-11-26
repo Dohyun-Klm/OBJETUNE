@@ -736,6 +736,41 @@ export async function setStartupEnabled(enabled: boolean): Promise<boolean> {
   }
 }
 
+// 트레이로 최소화 설정 API
+export async function getMinimizeToTray(): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return true; // 기본값 true
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('get_minimize_to_tray');
+  } catch (error) {
+    console.error('Failed to get minimize to tray:', error);
+    return true;
+  }
+}
+
+export async function setMinimizeToTray(enabled: boolean): Promise<boolean> {
+  if (!(await checkTauri())) {
+    return false;
+  }
+  
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+  
+  try {
+    return await invoke<boolean>('set_minimize_to_tray', { enabled });
+  } catch (error) {
+    console.error('Failed to set minimize to tray:', error);
+    return false;
+  }
+}
+
 // 앱 초기화
 export async function initializeApp(): Promise<boolean> {
   if (!(await checkTauri())) {

@@ -1455,6 +1455,53 @@ async fn set_startup_enabled(app: tauri::AppHandle, enabled: bool) -> Result<boo
     Ok(true)
 }
 
+// 트레이로 최소화 설정 API
+#[tauri::command]
+async fn get_minimize_to_tray() -> Result<bool, ErrorResponse> {
+    let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
+        message: format!("Database lock error: {}", e) 
+    })?;
+    
+    let conn = conn_guard.as_ref().ok_or_else(|| ErrorResponse { 
+        message: "Database not initialized".to_string() 
+    })?;
+    
+    let result: Option<String> = conn.query_row(
+        "SELECT value FROM settings WHERE key = 'minimize_to_tray'",
+        [],
+        |row| row.get(0),
+    ).optional().map_err(|e| ErrorResponse { 
+        message: format!("Failed to get minimize_to_tray setting: {}", e) 
+    })?;
+    
+    Ok(result.map(|v| v == "true").unwrap_or(true)) // 기본값 true
+}
+
+#[tauri::command]
+async fn set_minimize_to_tray(enabled: bool) -> Result<bool, ErrorResponse> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    
+    let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { 
+        message: format!("Database lock error: {}", e) 
+    })?;
+    
+    let conn = conn_guard.as_ref().ok_or_else(|| ErrorResponse { 
+        message: "Database not initialized".to_string() 
+    })?;
+    
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('minimize_to_tray', ?1, ?2)",
+        rusqlite::params![enabled.to_string(), now],
+    ).map_err(|e| ErrorResponse { 
+        message: format!("Failed to set minimize_to_tray: {}", e) 
+    })?;
+    
+    Ok(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // .env 파일에서 환경 변수 로드
@@ -1587,6 +1634,8 @@ pub fn run() {
             toggle_always_on_top,
             get_startup_enabled,
             set_startup_enabled,
+            get_minimize_to_tray,
+            set_minimize_to_tray,
             save_window_state,
             load_window_state,
             get_shuffle,
