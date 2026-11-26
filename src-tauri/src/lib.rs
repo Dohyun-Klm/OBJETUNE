@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::io::{self, BufRead};
+use tauri::{Manager};
+use tauri_plugin_autostart::ManagerExt;
 
 mod database;
 use database::{Track, Playlist, init_database, DB_CONNECTION};
@@ -1057,25 +1059,97 @@ async fn init_db() -> Result<String, ErrorResponse> {
 }
 
 #[tauri::command]
-async fn get_window_size() -> Result<(u32, u32), ErrorResponse> {
-    // 기본값 반환
-    Ok((800, 600))
+async fn get_window_size(app: tauri::AppHandle) -> Result<(u32, u32), ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        let size = window.inner_size().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        Ok((size.width, size.height))
+    } else {
+        Ok((800, 600))
+    }
 }
 
 #[tauri::command]
-async fn set_window_size(width: u32, height: u32) -> Result<bool, ErrorResponse> {
-    // 창 크기 설정은 Tauri 프레임워크에서 처리
+async fn set_window_size(app: tauri::AppHandle, width: u32, height: u32) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: width as f64, height: height as f64 }))
+            .map_err(|e| ErrorResponse { message: e.to_string() })?;
+    }
     Ok(true)
 }
 
 #[tauri::command]
-async fn get_window_position() -> Result<(i32, i32), ErrorResponse> {
-    // 기본값 반환
-    Ok((0, 0))
+async fn get_window_position(app: tauri::AppHandle) -> Result<(i32, i32), ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        let pos = window.outer_position().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        Ok((pos.x, pos.y))
+    } else {
+        Ok((0, 0))
+    }
 }
 
 #[tauri::command]
-async fn set_window_position(x: i32, y: i32) -> Result<bool, ErrorResponse> {
+async fn set_window_position(app: tauri::AppHandle, x: i32, y: i32) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x: x as f64, y: y as f64 }))
+            .map_err(|e| ErrorResponse { message: e.to_string() })?;
+    }
+    Ok(true)
+}
+
+// 창 상태 저장/복원 (위치, 크기, 최대화 여부)
+#[tauri::command]
+async fn save_window_state(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    if let Some(window) = app.get_webview_window("main") {
+        let pos = window.outer_position().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        let size = window.inner_size().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        let is_max = window.is_maximized().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        
+        let state = serde_json::json!({
+            "x": pos.x,
+            "y": pos.y,
+            "width": size.width,
+            "height": size.height,
+            "maximized": is_max
+        });
+        
+        let conn_guard = DB_CONNECTION.lock().map_err(|e| ErrorResponse { message: e.to_string() })?;
+        if let Some(conn) = conn_guard.as_ref() {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs() as i64;
+            conn.execute(
+                "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES ('window_state', ?1, ?2)",
+                rusqlite::params![state.to_string(), now],
+            ).map_err(|e| ErrorResponse { message: e.to_string() })?;
+        }
+    }
+    Ok(true)
+}
+
+#[tauri::command]
+async fn load_window_state(app: tauri::AppHandle) -> Result<bool, ErrorResponse> {
+    let result = get_setting("window_state".to_string()).await?;
+    if let Some(state_str) = result {
+        if let Ok(state) = serde_json::from_str::<serde_json::Value>(&state_str) {
+            if let Some(window) = app.get_webview_window("main") {
+                if let (Some(x), Some(y), Some(w), Some(h)) = (
+                    state.get("x").and_then(|v| v.as_i64()),
+                    state.get("y").and_then(|v| v.as_i64()),
+                    state.get("width").and_then(|v| v.as_u64()),
+                    state.get("height").and_then(|v| v.as_u64()),
+                ) {
+                    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x: x as f64, y: y as f64 }));
+                    let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: w as f64, height: h as f64 }));
+                    if let Some(max) = state.get("maximized").and_then(|v| v.as_bool()) {
+                        if max {
+                            let _ = window.maximize();
+                        }
+                    }
+                }
+            }
+        }
+    }
     Ok(true)
 }
 
@@ -1348,9 +1422,16 @@ async fn get_startup_enabled() -> Result<bool, ErrorResponse> {
 }
 
 #[tauri::command]
-async fn set_startup_enabled(enabled: bool) -> Result<bool, ErrorResponse> {
-    // 실제 자동 실행 구현은 운영체제별로 다름
-    // Windows: 레지스트리, macOS: ~/Library/LaunchAgents, Linux: ~/.config/autostart
+async fn set_startup_enabled(app: tauri::AppHandle, enabled: bool) -> Result<bool, ErrorResponse> {
+    // tauri-plugin-autostart를 사용한 자동 실행 설정
+    let autostart_manager = app.autolaunch();
+    if enabled {
+        autostart_manager.enable().map_err(|e| ErrorResponse { message: e.to_string() })?;
+    } else {
+        autostart_manager.disable().map_err(|e| ErrorResponse { message: e.to_string() })?;
+    }
+    
+    // 설정 저장
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -1400,6 +1481,69 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::default()
                 .build(),
         )
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
+        .setup(|app| {
+            // 시스템 트레이 생성
+            let tray = tauri::tray::TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tauri::menu::MenuBuilder::new(app)
+                    .item(&tauri::menu::MenuItem::with_id(app, "show", "보이기", true, None::<&str>)?)
+                    .item(&tauri::menu::MenuItem::with_id(app, "hide", "숨기기", true, None::<&str>)?)
+                    .separator()
+                    .item(&tauri::menu::MenuItem::with_id(app, "quit", "종료", true, None::<&str>)?)
+                    .build()?)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "hide" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.hide();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click { button: tauri::tray::MouseButton::Left, .. } = event {
+                        if let Some(app) = tray.app_handle().get_webview_window("main") {
+                            if app.is_visible().unwrap_or(false) {
+                                let _ = app.hide();
+                            } else {
+                                let _ = app.show();
+                                let _ = app.set_focus();
+                            }
+                        }
+                    }
+                })
+                .build(app)?;
+            
+            // 창 상태 복원
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = load_window_state(app_handle).await;
+            });
+            
+            // 자동 실행 상태 확인 및 적용
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Ok(enabled) = get_startup_enabled().await {
+                    if enabled {
+                        let _ = app_handle.autolaunch().enable();
+                    }
+                }
+            });
+            
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             init_db,
             get_app_info,
@@ -1443,6 +1587,8 @@ pub fn run() {
             toggle_always_on_top,
             get_startup_enabled,
             set_startup_enabled,
+            save_window_state,
+            load_window_state,
             get_shuffle,
             set_shuffle,
             get_repeat,
@@ -1453,6 +1599,18 @@ pub fn run() {
             search_youtube_tracks,
             search_soundcloud_by_url,
         ])
+        .on_window_event(|window, event| {
+            // 창 상태 변경 시 자동 저장 (리사이즈/이동만 처리)
+            if matches!(event, 
+                tauri::WindowEvent::Resized(_) | 
+                tauri::WindowEvent::Moved(_)
+            ) {
+                let app_handle = window.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = save_window_state(app_handle).await;
+                });
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
 }
