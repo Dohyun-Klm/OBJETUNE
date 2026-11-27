@@ -1,0 +1,294 @@
+/* PlaylistPanel - Dark mode styling */
+.vw-playlist-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  background-color: var(--vw-surface);
+  border-left: 1px solid var(--vw-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.vw-playlist-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--vw-spacing-sm) var(--vw-spacing-md);
+  border-bottom: 1px solid var(--vw-border);
+  background-color: var(--vw-surface);
+}
+
+.vw-playlist-panel__title {
+  margin: 0;
+  font-size: var(--vw-font-size-lg);
+  font-weight: 600;
+  color: var(--vw-text-primary);
+  letter-spacing: -0.5px;
+}
+
+.vw-playlist-panel__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--vw-spacing-xs);
+  border-radius: 4px;
+  font-size: var(--vw-font-size-sm);
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  color: var(--vw-text-secondary);
+}
+
+.vw-playlist-panel__btn:hover {
+  background-color: var(--vw-amber-dark);
+  color: var(--vw-amber-primary);
+}
+
+.vw-playlist-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--vw-spacing-sm);
+}
+
+.vw-playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--vw-spacing-sm);
+  margin-bottom: var(--vw-spacing-xs);
+  border-radius: 8px;
+  background-color: var(--vw-bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--vw-border);
+}
+
+.vw-playlist-item:hover {
+  background-color: var(--vw-amber-bg);
+  border-color: var(--vw-amber-primary);
+}
+
+.vw-playlist-item--active {
+  background-color: var(--vw-amber-bg);
+  border-color: var(--vw-amber-primary);
+}
+
+.vw-playlist-item__info {
+  display: flex;
+  align-items: center;
+  gap: var(--vw-spacing-sm);
+}
+
+.vw-playlist-item__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.vw-playlist-item__name {
+  margin: 0;
+  font-size: var(--vw-font-size-md);
+  font-weight: 600;
+  color: var(--vw-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.vw-playlist-item__desc {
+  margin: 0;
+  font-size: var(--vw-font-size-sm);
+  color: var(--vw-text-secondary);
+}
+
+.vw-playlist-item__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--vw-spacing-sm);
+}
+
+.vw-playlist-item__count {
+  font-size: var(--vw-font-size-xs);
+  color: var(--vw-text-secondary);
+  background-color: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.vw-playlist-item__delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 4px;
+}
+
+.vw-playlist-item:hover .vw-playlist-item__delete-btn {
+  opacity: 1;
+}
+
+/* Tracks view */
+.vw-playlist-panel__back-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--vw-spacing-xs);
+  padding: var(--vw-spacing-xs);
+  margin-bottom: var(--vw-spacing-sm);
+  background: none;
+  border: none;
+  color: var(--vw-amber-primary);
+  cursor: pointer;
+  font-size: var(--vw-font-size-sm);
+}
+
+.vw-playlist-panel__tracks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vw-spacing-xs);
+}
+
+.vw-playlist-panel__track-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--vw-spacing-sm);
+  border-radius: 8px;
+  background-color: var(--vw-bg-secondary);
+  border: 1px solid var(--vw-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vw-playlist-panel__track-item:hover {
+  background-color: var(--vw-amber-bg);
+}
+
+.vw-playlist-panel__track-info {
+  display: flex;
+  align-items: center;
+  gap: var(--vw-spacing-sm);
+}
+
+.vw-playlist-panel__track-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.vw-playlist-panel__track-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.vw-playlist-panel__track-title {
+  margin: 0;
+  font-size: var(--vw-font-size-md);
+  font-weight: 500;
+  color: var(--vw-text-primary);
+}
+
+.vw-playlist-panel__track-artist {
+  margin: 0;
+  font-size: var(--vw-font-size-sm);
+  color: var(--vw-text-secondary);
+}
+
+.vw-playlist-panel__remove-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 4px;
+  color: var(--vw-text-secondary);
+}
+
+.vw-playlist-panel__track-item:hover .vw-playlist-panel__remove-btn {
+  opacity: 1;
+}
+
+.vw-playlist-panel__loading {
+  padding: var(--vw-spacing-md);
+  text-align: center;
+  color: var(--vw-text-secondary);
+}
+
+/* SoundCloud form */
+.vw-playlist-panel__footer {
+  padding: var(--vw-spacing-sm);
+  border-top: 1px solid var(--vw-border);
+}
+
+.vw-playlist-panel__soundcloud-form {
+  display: flex;
+  align-items: center;
+  gap: var(--vw-spacing-sm);
+}
+
+.vw-playlist-panel__soundcloud-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.vw-playlist-panel__url-input {
+  flex: 1;
+  padding: var(--vw-spacing-xs) var(--vw-spacing-sm);
+  border: 1px solid var(--vw-border);
+  border-radius: 4px;
+  background-color: var(--vw-bg-secondary);
+  color: var(--vw-text-primary);
+  font-size: var(--vw-font-size-sm);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.vw-playlist-panel__url-input:focus {
+  border-color: var(--vw-amber-primary);
+}
+
+.vw-playlist-panel__url-input::placeholder {
+  color: var(--vw-text-secondary);
+}
+
+.vw-playlist-panel__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.vw-playlist-panel__add-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.vw-playlist-panel__add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dark mode colors via CSS variables */
+:root {
+  --vw-surface: #0a0a0a;
+  --vw-border: #1a1a1a;
+  --vw-text-primary: #ffffff;
+  --vw-text-secondary: #aaaaaa;
+  --vw-bg-secondary: #121212;
+  --vw-amber-primary: #ff0000;
+  --vw-amber-dark: #cc0000;
+  --vw-amber-bg: rgba(255, 0, 0, 0.1);
+  --vw-spacing-xs: 0.25rem;
+  --vw-spacing-sm: 0.5rem;
+  --vw-spacing-md: 1rem;
+  --vw-font-size-sm: 0.875rem;
+  --vw-font-size-md: 1rem;
+  --vw-font-size-lg: 1.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .vw-playlist-panel {
+    width: 100%;
+  }
+}
