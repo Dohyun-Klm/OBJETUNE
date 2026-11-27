@@ -41,6 +41,8 @@ import {
   addFavorite,
   removeFavorite,
   addToHistory,
+  addToQueue,
+  getQueue,
   setSetting,
   checkTauri,
   getWindowSize,
@@ -559,6 +561,16 @@ function App() {
     }
   };
 
+  // 큐에 트랙 추가
+  const handleAddToQueue = async (track: Track) => {
+    const success = await addToQueue(track.id);
+    if (success) {
+      // 큐 패널 새로고침
+      const updatedQueue = await getQueue();
+      setQueue(updatedQueue);
+    }
+  };
+
   // 턴테이블 설정 토글
   const handleToggleDynamicVinylLabel = () => {
     const newSettings = { ...turntableSettings, dynamicVinylLabel: !turntableSettings.dynamicVinylLabel };
@@ -699,6 +711,7 @@ function App() {
                         onPlay={handlePlay}
                         onClick={handleTrackClick}
                         onFavoriteToggle={handleFavoriteToggle}
+                        onAddToQueue={handleAddToQueue}
                       />
                     );
                   })}

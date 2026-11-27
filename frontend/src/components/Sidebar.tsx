@@ -89,7 +89,6 @@ const navigationItems: NavigationItem[] = [
   { id: 'favorites', label: 'Favorites', icon: 'favorite' },
   { id: 'recently-played', label: 'Recently Played', icon: 'history' },
   { id: 'queue', label: 'Queue', icon: 'queue', showCount: true, count: 0 },
-  { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ 

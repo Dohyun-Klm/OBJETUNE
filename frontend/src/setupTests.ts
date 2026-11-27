@@ -39,7 +39,7 @@ Object.defineProperty(window, 'screenHeight', {
 });
 
 // Import mock data from actual file to ensure consistency
-import { mockTracks, mockPlaylists } from './data/mockData';
+import { mockTracks, mockPlaylists } from './data/mockData'; // eslint-disable-line import/first
 
 // Create mock invoke function
 const mockInvoke = jest.fn().mockImplementation((command: string, args?: any) => {
@@ -84,6 +84,23 @@ const mockInvoke = jest.fn().mockImplementation((command: string, args?: any) =>
   }
   if (command === 'get_all_favorites') {
     return Promise.resolve([]);
+  }
+  if (command === 'get_favorites') {
+    return Promise.resolve(mockTracks.filter(t => t.isFavorite).map(t => ({
+      id: t.id,
+      platform: t.platform,
+      platform_id: t.platformId,
+      title: t.title,
+      artist: t.artist,
+      album: t.album || null,
+      duration: t.duration,
+      thumbnail: t.thumbnail || null,
+      url: t.url || null,
+      embed_url: t.embedUrl,
+      cover_art_url: t.coverArtUrl || null,
+      added_at: t.addedAt ? Math.floor(new Date(t.addedAt).getTime() / 1000) : 0,
+      is_favorite: t.isFavorite || false,
+    })));
   }
   if (command === 'get_history') {
     return Promise.resolve([]);

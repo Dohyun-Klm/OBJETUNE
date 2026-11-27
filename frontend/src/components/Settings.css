@@ -9,7 +9,7 @@
 .vw-settings__title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--vw-wood-dark);
+  color: var(--vw-amber-primary);
   margin: 0 0 1rem 0;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .vw-settings__checkbox:checked {
-  background: var(--vw-wood-primary);
+  background: var(--vw-amber-primary);
   border-color: var(--vw-amber-dark);
 }
 
