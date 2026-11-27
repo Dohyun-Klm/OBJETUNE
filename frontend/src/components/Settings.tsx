@@ -6,7 +6,6 @@ import {
   getWindowPosition,
   setWindowPosition,
   getAlwaysOnTop,
-  setAlwaysOnTop,
   toggleAlwaysOnTop,
   minimize,
   maximize,

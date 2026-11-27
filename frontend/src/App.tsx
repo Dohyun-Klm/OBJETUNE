@@ -32,17 +32,13 @@ import {
   loadSoundCloudAPI
 } from './services/platformAdapter';
 import { playerManager } from './services/playerManager';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
   createTrack,
-  createPlaylist,
   getPlaylists,
   getAllTracks,
   addFavorite,
   removeFavorite,
   addToHistory,
-  getQueue,
-  addToQueue,
   setSetting,
   checkTauri,
   getWindowSize,
@@ -67,23 +63,6 @@ import { invoke } from '@tauri-apps/api/core';
 const tauriWindow = typeof window !== 'undefined' && (window as any).__TAURI_INTEGRATION__
   ? require('@tauri-apps/api/window')
   : null;
-
-// 목업용 Track을 PlatformSearchResult로 변환
-function mockToPlatformResult(track: Track): any {
-  return {
-    id: track.id,
-    title: track.title,
-    artist: track.artist,
-    album: track.album,
-    duration: track.duration,
-    thumbnail: track.thumbnail,
-    platform: track.platform === 'youtube' ? 'youtube' : 'soundcloud',
-    url: track.url,
-    embedUrl: track.embedUrl,
-    publishedAt: undefined,
-    isPlayable: true,
-  };
-}
 
 function App() {
   // 앱 상태
@@ -114,6 +93,7 @@ function App() {
 
   // 큐 패널 상태
   const [queuePanelOpen, setQueuePanelOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [queue, setQueue] = useState<Track[]>([]);
 
   // Tauri API 확인 및 초기 데이터 로드
@@ -252,6 +232,7 @@ function App() {
   }, []);
 
   // Tauri 창 상태 복원
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
     
@@ -261,7 +242,10 @@ function App() {
     initWindow();
     
     // 창 resize/move 이벤트 구독 (Tauri 2)
+    // Tauri 2에서는 Window API를 통해 이벤트 구독
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const win = tauriWindow.getCurrentWindow();
+    /* eslint-enable @typescript-eslint/no-unused-vars */
     
     // 창 상태 변경 감지 및 저장
     const handleWindowStateChange = async () => {
@@ -275,6 +259,7 @@ function App() {
       // 이벤트 구독 해제는 자동으로 처리됨
     };
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // 트랙 재생 핸들러
   const handlePlay = async (track: Track) => {
@@ -366,8 +351,6 @@ function App() {
     if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
     
     try {
-      const win = tauriWindow.getCurrentWindow();
-      
       // 저장된 크기/위치 복원 시도
       const savedSize = await getWindowSize();
       const savedPos = await getWindowPosition();
@@ -474,18 +457,6 @@ function App() {
       await addToHistory(track.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : '트랙 클릭 중 오류가 발생했습니다';
-      setError(message);
-    }
-  };
-
-  // 큐에 추가
-  const handleAddToQueue = async (track: Track) => {
-    try {
-      await addToQueue(track.id);
-      setError('Added to queue');
-      setTimeout(() => setError(null), 2000);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add to queue';
       setError(message);
     }
   };

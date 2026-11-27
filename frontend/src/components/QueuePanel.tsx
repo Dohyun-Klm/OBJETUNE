@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Track } from '../types';
-import { getQueue, removeFromQueue, clearQueue, moveQueueItem, addToQueue } from '../services/tauriApi';
+import { getQueue, removeFromQueue, clearQueue, moveQueueItem } from '../services/tauriApi';
 import './QueuePanel.css';
 
 interface QueuePanelProps {
@@ -114,7 +114,7 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({
           <p className="vw-queue-panel__hint">Add tracks to build your queue</p>
         </div>
       ) : (
-        <ul className="vw-queue-panel__list" role="list">
+        <ul className="vw-queue-panel__list">
           {queue.map((track, index) => (
             <li
               key={track.id}

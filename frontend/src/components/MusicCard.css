@@ -14,7 +14,7 @@
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: linear-gradient(45deg, #ff0000, #cc0000);
+  background: linear-gradient(45deg, var(--vw-amber-primary), var(--vw-amber-dark));
 }
 
 .vw-card__icon {
@@ -92,16 +92,16 @@
 .vw-music-card__favorite-btn--active {
   opacity: 1;
   pointer-events: auto;
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
 }
 
-.vw-music-card__play-btn {
+.vw-music-card__play-btn,
+.vw-music-card__queue-btn {
   position: absolute;
   top: 0.5rem;
-  right: 0.5rem;
-  width: 24px;
-  height: 24px;
-  border: none;
   background: transparent;
+  border: none;
   color: var(--vw-text-secondary);
   border-radius: 50%;
   cursor: pointer;
@@ -113,15 +113,28 @@
   pointer-events: none;
 }
 
-.vw-music-card:hover .vw-music-card__play-btn {
+.vw-music-card:hover .vw-music-card__play-btn,
+.vw-music-card:hover .vw-music-card__queue-btn {
   opacity: 1;
   pointer-events: auto;
 }
 
-.vw-music-card__play-btn:hover {
+.vw-music-card__play-btn:hover,
+.vw-music-card__queue-btn:hover {
   background: var(--vw-amber-primary);
   color: var(--vw-bg-primary);
   transform: scale(1.1);
+}
+
+.vw-music-card__play-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.vw-music-card__queue-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
 }
 
 .vw-music-card__actions {
@@ -130,29 +143,6 @@
   margin-top: 0.5rem;
 }
 
-.vw-music-card__queue-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: var(--vw-bg-secondary);
-  color: var(--vw-text-secondary);
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.vw-music-card:hover .vw-music-card__queue-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.vw-music-card__queue-btn:hover {
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
-  transform: scale(1.1);
+.vw-music-card--playlist .vw-music-card__image {
+  aspect-ratio: 4/3;
 }
