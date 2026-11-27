@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import './SearchBar.css';
 import { PlatformFilter, PlatformSearchResult, Track } from '../types';
 import { validateSoundCloudUrl, fetchSoundCloudTrackByUrl } from '../services/platformAdapter';
-import { searchYouTubeTracks, searchSoundCloudByUrl } from '../services/tauriApi';
+import { searchSoundCloudByUrl } from '../services/tauriApi';
+// searchYouTubeTracks는 App.tsx에서 호출됨
 
 interface SearchBarProps {
   value: string;

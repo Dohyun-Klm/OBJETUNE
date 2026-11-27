@@ -6,10 +6,8 @@
 
 import { 
   Platform, 
-  PlatformSearchResult, 
   PlayerState,
-  Track,
-  NowPlaying 
+  Track
 } from '../types';
 
 // 이벤트 페이스

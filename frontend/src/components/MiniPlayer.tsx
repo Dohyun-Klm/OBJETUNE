@@ -1,6 +1,5 @@
 import React from 'react';
 import { NowPlaying } from '../types';
-import { playerManager } from '../services/playerManager';
 import './MiniPlayer.css';
 
 interface MiniPlayerProps {

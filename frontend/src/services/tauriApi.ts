@@ -4,7 +4,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { Track, Playlist, NowPlaying } from '../types';
+import { Track, Playlist } from '../types';
 
 // Test mock data - imported dynamically to avoid circular dependency
 let mockTracks: Track[] = [];

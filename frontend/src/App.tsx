@@ -19,7 +19,8 @@ import {
   TurntableSettings, 
   PlaybackState,
   NowPlaying,
-  CurrentView
+  CurrentView,
+  PlatformSearchResult
 } from './types';
 import { 
   mockTracks, 
@@ -28,29 +29,21 @@ import {
 } from './data/mockData';
 import { 
   loadYouTubeAPI, 
-  loadSoundCloudAPI,
-  validateSoundCloudUrl,
-  fetchSoundCloudTrackByUrl,
-  PlatformSearchResult
+  loadSoundCloudAPI
 } from './services/platformAdapter';
 import { playerManager } from './services/playerManager';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
   createTrack,
   createPlaylist,
   getPlaylists,
   getAllTracks,
-  getFavorites,
-  getHistory,
   addFavorite,
   removeFavorite,
   addToHistory,
-  addToQueue,
-  removeFromQueue,
-  clearQueue,
-  moveQueueItem,
-  getSetting,
-  setSetting,
   getQueue,
+  addToQueue,
+  setSetting,
   checkTauri,
   getWindowSize,
   setWindowSize,
@@ -59,18 +52,14 @@ import {
   getAlwaysOnTop,
   setAlwaysOnTop,
   isMaximized,
-  maximize,
-  unmaximize,
-  minimize,
   getShuffle,
   setShuffle,
   getRepeat,
   setRepeat,
   registerMediaShortcuts,
-  unregisterMediaShortcuts,
-  searchYouTubeTracks,
-  searchSoundCloudByUrl,
+  unregisterMediaShortcuts
 } from './services/tauriApi';
+import { searchYouTubeTracks, searchSoundCloudByUrl } from './services/tauriApi';
 import { invoke } from '@tauri-apps/api/core';
 
 // Tauri API는 동적으로 가져오기 (테스트 환경에서 모킹 가능)
@@ -80,7 +69,7 @@ const tauriWindow = typeof window !== 'undefined' && (window as any).__TAURI_INT
   : null;
 
 // 목업용 Track을 PlatformSearchResult로 변환
-function mockToPlatformResult(track: Track): PlatformSearchResult {
+function mockToPlatformResult(track: Track): any {
   return {
     id: track.id,
     title: track.title,

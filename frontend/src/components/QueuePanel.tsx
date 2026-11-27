@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Track } from '../types';
 import { getQueue, removeFromQueue, clearQueue, moveQueueItem, addToQueue } from '../services/tauriApi';
-import { playerManager } from '../services/playerManager';
 import './QueuePanel.css';
 
 interface QueuePanelProps {
