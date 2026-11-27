@@ -60,10 +60,11 @@ const Icon: React.FC<{ name: string; className?: string }> = ({ name, className 
         <path d="M8.3 8.3L9 9" strokeLinecap="round" />
       </svg>
     ),
-    headphones: (
+    turntable: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor">
-        <path d="M3 14v3a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3" strokeLinecap="round" />
-        <path d="M9 18V9l2 9" strokeLinecap="round" />
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v8" strokeLinecap="round" />
+        <path d="M8 12h8" strokeLinecap="round" />
       </svg>
     ),
     library: (
@@ -113,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => onModeChange('turntable')}
             aria-label="Turntable Mode"
           >
-            <Icon name="headphones" />
+            <Icon name="turntable" />
           </button>
           <button
             className={`vw-sidebar__mode-btn ${currentMode === 'library' ? 'vw-sidebar__mode-btn--active' : ''}`}

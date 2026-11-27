@@ -36,6 +36,8 @@ import {
   createTrack,
   getPlaylists,
   getAllTracks,
+  getFavorites,
+  getHistory,
   addFavorite,
   removeFavorite,
   addToHistory,
@@ -85,6 +87,10 @@ function App() {
   // 로컬 트랙 및 플레이리스트
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
   const [localPlaylists, setLocalPlaylists] = useState<Playlist[]>([]);
+  
+  // API 데이터: 즐겨찾기 및 최근 재생 기록
+  const [favoritesData, setFavoritesData] = useState<Track[]>([]);
+  const [historyData, setHistoryData] = useState<Track[]>([]);
 
   // 턴테이블 설정
   const [turntableSettings, setTurntableSettings] = useState<TurntableSettings>({
@@ -105,14 +111,18 @@ function App() {
           const mode = await invoke<string>('get_current_mode');
           setCurrentMode(mode as AppMode);
           
-          // 로컬 데이터 로드
-          const [tracks, playlists] = await Promise.all([
+          // 로컬 데이터 로드 (트랙, 플레이리스트, 즐겨찾기, 히스토리 동시 로드)
+          const [tracks, playlists, favorites, history] = await Promise.all([
             getAllTracks(),
-            getPlaylists()
+            getPlaylists(),
+            getFavorites(),
+            getHistory(100)
           ]);
           
           setLocalTracks(tracks.length > 0 ? tracks : mockTracks);
           setLocalPlaylists(playlists.length > 0 ? playlists : mockPlaylists);
+          setFavoritesData(favorites);
+          setHistoryData(history);
           
           // 재생 설정 로드 (셔플/반복)
           const [shuffle, repeat] = await Promise.all([
@@ -176,8 +186,30 @@ function App() {
       case 'playlists':
         return localPlaylists;
       case 'favorites':
-        return localTracks.filter(t => localTracks.some(t2 => t2.isFavorite && t2.id === t.id));
+        // API 데이터 사용: getFavorites()로 가져온 즐겨찾기 목록
+        if (favoritesData.length > 0) {
+          return favoritesData.map(favTrack => {
+            // 로컬 트랙의 추가 정보 보완 (플랫폼 필터, 검색 결과 등)
+            const localTrack = localTracks.find(t => t.id === favTrack.id);
+            return localTrack ? { ...favTrack, ...localTrack } : favTrack;
+          });
+        }
+        return localTracks.filter(t => t.isFavorite);
       case 'recently-played':
+        // API 데이터 사용: getHistory()로 가져온 재생 기록
+        if (historyData.length > 0) {
+          // 히스토리에서 중복 제거 (최신순으로 정렬)
+          const uniqueTracks: Track[] = [];
+          const seenIds = new Set<string>();
+          for (const track of historyData) {
+            if (!seenIds.has(track.id)) {
+              seenIds.add(track.id);
+              uniqueTracks.push(track);
+            }
+          }
+          return uniqueTracks;
+        }
+        // 히스토리가 없으면 로컬 트랙의 addedAt 기준 정렬
         return [...localTracks].sort((a, b) => 
           new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
         );
@@ -517,9 +549,13 @@ function App() {
     }
     
     if (success) {
+      // 로컬 트랙 업데이트
       setLocalTracks(prev => prev.map(t => 
         t.id === trackId ? { ...t, isFavorite: !t.isFavorite } : t
       ));
+      // API에서 직접 즐겨찾기 목록 새로고침
+      const updatedFavorites = await getFavorites();
+      setFavoritesData(updatedFavorites);
     }
   };
 

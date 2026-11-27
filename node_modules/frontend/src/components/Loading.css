@@ -1,0 +1,26 @@
+/* Loading Component - Vintage Walnut */
+.vw-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--vw-text-secondary);
+}
+
+.vw-loading__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--vw-silver);
+  border-top-color: var(--vw-wood-primary);
+  border-radius: 50%;
+  animation: vw-spin 1s linear infinite;
+  margin-right: 1rem;
+}
+
+@keyframes vw-spin {
+  to { transform: rotate(360deg); }
+}
+
+.vw-loading__message {
+  font-size: 0.9rem;
+}
