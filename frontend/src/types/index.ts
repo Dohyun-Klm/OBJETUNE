@@ -25,16 +25,20 @@ export interface Track {
 // 플랫폼 검색 결과 (YouTube/SoundCloud용 공통 타입)
 export interface PlatformSearchResult {
   id: string;
+  platformId?: string;  // 플랫폼별 고유 ID
+  platform: 'youtube' | 'soundcloud';
   title: string;
   artist: string;
   album: string;
   duration: number; // 초 단위
   thumbnail: string;
-  platform: 'youtube' | 'soundcloud';
   url: string; // 원본 URL
   embedUrl: string; // IFrame 플레이어용 URL
   publishedAt?: string; // ISO date string
   isPlayable: boolean;
+  coverArtUrl?: string; // Dynamic Vinyl Label용 아트워크 URL
+  addedAt?: string; // ISO date string
+  isFavorite?: boolean; // 좋아요 표시
 }
 
 // 플레이어 상태 (재생 상태)

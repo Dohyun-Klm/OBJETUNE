@@ -12,6 +12,16 @@
   align-items: center;
   gap: 1rem;
   z-index: 1000;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.vw-mini-player:hover {
+  height: 180px;
+}
+
+.vw-mini-player--expanded {
+  height: 180px;
 }
 
 .vw-mini-player__placeholder {
@@ -24,8 +34,19 @@
   width: 48px;
   height: 48px;
   border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   background: linear-gradient(45deg, #ff0000, #cc0000);
   box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+  transition: all 0.3s;
+}
+
+.vw-mini-player:hover .vw-mini-player__cover,
+.vw-mini-player--expanded .vw-mini-player__cover {
+  width: 120px;
+  height: 120px;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
 }
 
 .vw-mini-player__info {
@@ -34,6 +55,17 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  transition: all 0.3s;
+  opacity: 1;
+  max-height: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vw-mini-player:hover .vw-mini-player__info,
+.vw-mini-player--expanded .vw-mini-player__info {
+  opacity: 1;
+  max-height: 100px;
 }
 
 .vw-mini-player__title {
@@ -44,18 +76,45 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: all 0.3s;
+}
+
+.vw-mini-player:hover .vw-mini-player__title,
+.vw-mini-player--expanded .vw-mini-player__title {
+  opacity: 1;
 }
 
 .vw-mini-player__artist {
   font-size: 0.75rem;
   color: var(--vw-text-secondary);
   margin: 0;
+  transition: all 0.3s;
+}
+
+.vw-mini-player:hover .vw-mini-player__artist,
+.vw-mini-player--expanded .vw-mini-player__artist {
+  opacity: 1;
 }
 
 .vw-mini-player__controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: all 0.3s;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vw-mini-player:hover .vw-mini-player__controls,
+.vw-mini-player--expanded .vw-mini-player__controls {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@supports not (display: flex) {
+  .vw-mini-player__controls {
+    opacity: 1;
+  }
 }
 
 .vw-mini-player__btn {

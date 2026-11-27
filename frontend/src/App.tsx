@@ -23,11 +23,6 @@ import {
   PlatformSearchResult
 } from './types';
 import { 
-  mockTracks, 
-  mockPlaylists, 
-  mockNowPlaying
-} from './data/mockData';
-import { 
   loadYouTubeAPI, 
   loadSoundCloudAPI
 } from './services/platformAdapter';
@@ -56,11 +51,11 @@ import {
   setShuffle,
   getRepeat,
   setRepeat,
+  getCurrentMode,
   registerMediaShortcuts,
   unregisterMediaShortcuts
 } from './services/tauriApi';
 import { searchYouTubeTracks, searchSoundCloudByUrl } from './services/tauriApi';
-import { invoke } from '@tauri-apps/api/core';
 
 // Tauri API는 동적으로 가져오기 (테스트 환경에서 모킹 가능)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -80,8 +75,28 @@ function App() {
   // 로딩 및 오류 상태
   const [error, setError] = useState<string | null>(null);
   
-  // 현재 재생 상태
-  const [nowPlaying, setNowPlaying] = useState<NowPlaying>(mockNowPlaying);
+  // 현재 재생 상태 - 빈 상태에서 시작
+  const [nowPlaying, setNowPlaying] = useState<NowPlaying>({
+    track: {
+      id: '',
+      platform: 'youtube',
+      title: '',
+      artist: '',
+      album: '',
+      duration: 0,
+      thumbnail: '',
+      url: '',
+      embedUrl: '',
+      isPlayable: true,
+      addedAt: new Date().toISOString(),
+    },
+    isPlaying: false,
+    volume: 75,
+    progress: 0,
+    duration: 0,
+    shuffle: false,
+    repeat: 'off',
+  });
   
   // 턴테이블 모드 재생 상태
   const [turntablePlaybackState, setTurntablePlaybackState] = useState<PlaybackState>('stopped');
@@ -110,8 +125,8 @@ function App() {
       try {
         // Tauri 환경 확인
         if (await checkTauri()) {
-          const mode = await invoke<string>('get_current_mode');
-          setCurrentMode(mode as AppMode);
+          const mode = await getCurrentMode();
+          setCurrentMode(mode);
           
           // 로컬 데이터 로드 (트랙, 플레이리스트, 즐겨찾기, 히스토리 동시 로드)
           const [tracks, playlists, favorites, history] = await Promise.all([
@@ -121,8 +136,8 @@ function App() {
             getHistory(100)
           ]);
           
-          setLocalTracks(tracks.length > 0 ? tracks : mockTracks);
-          setLocalPlaylists(playlists.length > 0 ? playlists : mockPlaylists);
+          setLocalTracks(tracks.length > 0 ? tracks : []);
+          setLocalPlaylists(playlists.length > 0 ? playlists : []);
           setFavoritesData(favorites);
           setHistoryData(history);
           
@@ -133,18 +148,18 @@ function App() {
           ]);
           setNowPlaying(prev => ({ ...prev, shuffle, repeat }));
         } else {
-          // 개발 모드: 모의 데이터
+          // 개발 모드: 빈 상태
           setCurrentMode('shell');
-          setLocalTracks(mockTracks);
-          setLocalPlaylists(mockPlaylists);
+          setLocalTracks([]);
+          setLocalPlaylists([]);
         }
       } catch (err) {
         console.error('Failed to load app data:', err);
         setError('앱 정보를 로드하는 중 오류가 발생했습니다.');
-        // 오류 시 모의 데이터 사용
+        // 오류 시 빈 상태 사용
         setCurrentMode('shell');
-        setLocalTracks(mockTracks);
-        setLocalPlaylists(mockPlaylists);
+        setLocalTracks([]);
+        setLocalPlaylists([]);
       }
     };
     loadAppData();
@@ -160,14 +175,20 @@ function App() {
     }
     
     // 글로벌 미디어 단축키 등록
-    registerMediaShortcuts().catch(err => {
-      console.error('Failed to register media shortcuts:', err);
-    });
+    const shortcutsPromise = registerMediaShortcuts();
+    if (shortcutsPromise && typeof shortcutsPromise.catch === 'function') {
+      shortcutsPromise.catch(err => {
+        console.error('Failed to register media shortcuts:', err);
+      });
+    }
     
     return () => {
-      unregisterMediaShortcuts().catch(err => {
-        console.error('Failed to unregister media shortcuts:', err);
-      });
+      const unregPromise = unregisterMediaShortcuts();
+      if (unregPromise && typeof unregPromise.catch === 'function') {
+        unregPromise.catch(err => {
+          console.error('Failed to unregister media shortcuts:', err);
+        });
+      }
     };
   }, []);
 
@@ -177,9 +198,7 @@ function App() {
                           track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.album.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesPlatform = track.platform === platformFilter;
-    
-    return matchesSearch && matchesPlatform;
+    return matchesSearch;
   });
 
   // 현재 뷰에 맞는 트랙/플레이리스트
@@ -243,22 +262,34 @@ function App() {
   useEffect(() => {
     const subscriptions: Array<() => void> = [];
     
-    subscriptions.push(playerManager.on('play', (event) => {
+    const playSub = playerManager.on('play', (event) => {
       setTurntablePlaybackState('playing');
-    }).unsubscribe);
+    });
+    if (playSub && typeof playSub.unsubscribe === 'function') {
+      subscriptions.push(playSub.unsubscribe);
+    }
 
-    subscriptions.push(playerManager.on('pause', (event) => {
+    const pauseSub = playerManager.on('pause', (event) => {
       setTurntablePlaybackState('paused');
-    }).unsubscribe);
+    });
+    if (pauseSub && typeof pauseSub.unsubscribe === 'function') {
+      subscriptions.push(pauseSub.unsubscribe);
+    }
 
-    subscriptions.push(playerManager.on('end', (event) => {
+    const endSub = playerManager.on('end', (event) => {
       setTurntablePlaybackState('stopped');
-    }).unsubscribe);
+    });
+    if (endSub && typeof endSub.unsubscribe === 'function') {
+      subscriptions.push(endSub.unsubscribe);
+    }
 
-    subscriptions.push(playerManager.on('error', (event) => {
+    const errorSub = playerManager.on('error', (event) => {
       const errMsg = (event as any)?.message || '재생 오류가 발생했습니다';
       setError(errMsg);
-    }).unsubscribe);
+    });
+    if (errorSub && typeof errorSub.unsubscribe === 'function') {
+      subscriptions.push(errorSub.unsubscribe);
+    }
 
     return () => {
       subscriptions.forEach(unsub => unsub());
@@ -302,9 +333,13 @@ function App() {
       await playerManager.play();
       
       setNowPlaying({
-        ...mockNowPlaying,
         track,
         isPlaying: true,
+        volume: 75,
+        progress: 0,
+        duration: track.duration,
+        shuffle: nowPlaying.shuffle ?? false,
+        repeat: nowPlaying.repeat ?? 'off',
       });
       setTurntablePlaybackState('playing');
 
@@ -613,11 +648,11 @@ function App() {
         queueLength={queue.length}
       />
       
-      {/* SoundCloud Player Container (숨겨진 위젯용) */}
-      <div id="soundcloud-player-container" style={{ display: 'none', width: '100%', height: '0' }} />
+      {/* SoundCloud Player Container (위젯용) */}
+      <div id="soundcloud-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
       
       {/* YouTube Player Container */}
-      <div id="youtube-player-container" style={{ display: 'none', width: '100%', height: '0' }} />
+      <div id="youtube-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
       
       {/* 메인 컨텐츠 */}
       <div className="vw-main">

@@ -3,9 +3,10 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+import { Track, Playlist } from './types';
 
 // Set NODE_ENV before any imports that check it
-process.env.NODE_ENV = 'test';
+(process.env as any).NODE_ENV = 'test';
 
 // Mock matchMedia for reduced-motion support in tests
 Object.defineProperty(window, 'matchMedia', {
@@ -38,108 +39,110 @@ Object.defineProperty(window, 'screenHeight', {
   value: 1440,
 });
 
-// Import mock data from actual file to ensure consistency
-import { mockTracks, mockPlaylists } from './data/mockData'; // eslint-disable-line import/first
+// Test mock data - defined here for tests only
+export const mockTracks: Track[] = [
+  {
+    id: 'track-001',
+    platform: 'soundcloud',
+    platformId: 'sc-12345',
+    title: 'Blue Moon',
+    artist: 'Billie Holiday',
+    album: 'Lady in Satin',
+    duration: 255,
+    thumbnail: '🎵',
+    url: 'https://soundcloud.com/example/blue-moon',
+    embedUrl: 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/12345',
+    isPlayable: true,
+    addedAt: new Date('2024-01-15').toISOString(),
+    isFavorite: false,
+  },
+  {
+    id: 'track-002',
+    platform: 'youtube',
+    platformId: 'yt-67890',
+    title: 'Let It Be',
+    artist: 'The Beatles',
+    album: 'Abbey Road',
+    duration: 243,
+    thumbnail: '🎵',
+    url: 'https://youtube.com/watch?v=example',
+    embedUrl: 'https://www.youtube.com/embed/example',
+    isPlayable: true,
+    addedAt: new Date('2024-01-10').toISOString(),
+    isFavorite: false,
+  },
+  {
+    id: 'track-003',
+    platform: 'spotify',
+    platformId: 'sp-11111',
+    title: 'What a Wonderful World',
+    artist: 'Louis Armstrong',
+    album: 'What a Wonderful World',
+    duration: 126,
+    thumbnail: '🎵',
+    url: 'https://spotify.com/track/example',
+    embedUrl: 'https://open.spotify.com/embed/track/example',
+    isPlayable: true,
+    addedAt: new Date('2024-01-05').toISOString(),
+    isFavorite: true,
+  },
+];
 
-// Create mock invoke function
-const mockInvoke = jest.fn().mockImplementation((command: string, args?: any) => {
-  // checkTauri() calls get_app_info
-  if (command === 'get_app_info') {
-    return Promise.resolve({ name: 'OBJETUNE', version: '0.1.0', mode: 'library' });
-  }
-  // getAllTracks() - return mock data in the format Tauri API would return
-  if (command === 'get_all_tracks') {
-    return Promise.resolve(mockTracks.map(t => ({
-      id: t.id,
-      platform: t.platform,
-      platform_id: t.platformId,
-      title: t.title,
-      artist: t.artist,
-      album: t.album || null,
-      duration: t.duration,
-      thumbnail: t.thumbnail || null,
-      url: t.url || null,
-      embed_url: t.embedUrl,
-      cover_art_url: t.coverArtUrl || null,
-      added_at: t.addedAt ? Math.floor(new Date(t.addedAt).getTime() / 1000) : 0,
-      is_favorite: t.isFavorite || false,
-    })));
-  }
-  // getPlaylists() - return mock data in the format Tauri API would return
-  if (command === 'get_playlists') {
-    return Promise.resolve(mockPlaylists.map(p => ({
-      id: p.id,
-      name: p.name,
-      description: p.description || null,
-      cover_image: p.coverImage || null,
-      track_count: p.trackCount,
-      created_at: p.createdAt ? Math.floor(new Date(p.createdAt).getTime() / 1000) : 0,
-      updated_at: p.updatedAt ? Math.floor(new Date(p.updatedAt).getTime() / 1000) : 0,
-      is_favorite: p.isFavorite || false,
-    })));
-  }
-  // Other API calls
-  if (command === 'get_current_mode') {
-    return Promise.resolve('library');
-  }
-  if (command === 'get_all_favorites') {
-    return Promise.resolve([]);
-  }
-  if (command === 'get_favorites') {
-    return Promise.resolve(mockTracks.filter(t => t.isFavorite).map(t => ({
-      id: t.id,
-      platform: t.platform,
-      platform_id: t.platformId,
-      title: t.title,
-      artist: t.artist,
-      album: t.album || null,
-      duration: t.duration,
-      thumbnail: t.thumbnail || null,
-      url: t.url || null,
-      embed_url: t.embedUrl,
-      cover_art_url: t.coverArtUrl || null,
-      added_at: t.addedAt ? Math.floor(new Date(t.addedAt).getTime() / 1000) : 0,
-      is_favorite: t.isFavorite || false,
-    })));
-  }
-  if (command === 'get_history') {
-    return Promise.resolve([]);
-  }
-  if (command === 'get_queue') {
-    return Promise.resolve([]);
-  }
-  if (command === 'get_settings') {
-    return Promise.resolve({});
-  }
-  if (command === 'get_window_size') {
-    return Promise.resolve([800, 600]);
-  }
-  if (command === 'get_window_position') {
-    return Promise.resolve([100, 100]);
-  }
-  if (command === 'get_always_on_top') {
-    return Promise.resolve(false);
-  }
-  if (command === 'get_startup_enabled') {
-    return Promise.resolve(false);
-  }
-  if (command === 'is_maximized') {
-    return Promise.resolve(false);
-  }
-  // Default: return empty object
-  return Promise.resolve({});
-});
+export const mockPlaylists: Playlist[] = [
+  {
+    id: 'pl-001',
+    name: 'Vintage Classics',
+    description: '1970년대 빈티지 명곡 모음',
+    trackCount: 12,
+    coverImage: '',
+    createdAt: new Date('2024-01-01').toISOString(),
+    updatedAt: new Date('2024-01-20').toISOString(),
+    isFavorite: true,
+  },
+  {
+    id: 'pl-002',
+    name: 'Jazz Essentials',
+    description: '재즈의 정석들',
+    trackCount: 8,
+    coverImage: '',
+    createdAt: new Date('2024-01-05').toISOString(),
+    updatedAt: new Date('2024-01-15').toISOString(),
+    isFavorite: true,
+  },
+];
 
-// Mock @tauri-apps/api/core
+// Mock @tauri-apps/api/core invoke function
+// This is needed because the actual tauriApi.ts implementation calls invoke,
+// and the test file's jest.mock for tauriApi needs invoke to return proper data.
+
+declare global {
+  interface Window {
+    __mockInvokeResponses?: Record<string, any>;
+  }
+}
+
+// Initialize mock responses on window object
+window.__mockInvokeResponses = {
+  'get_app_info': {},
+};
+
+// Mock invoke function that can be modified at runtime
+let mockInvokeResponses = window.__mockInvokeResponses;
+
 jest.mock('@tauri-apps/api/core', () => ({
-  invoke: mockInvoke,
+  invoke: jest.fn((command: string, _args?: any) => {
+    return Promise.resolve(mockInvokeResponses[command] || {});
+  }),
 }));
 
-// Expose mockInvoke for tests that need to inspect calls
-(global as any).mockInvokeImpl = mockInvoke;
+// Helper function to set mock responses (available globally)
+(window as any).__setMockInvokeResponses = (responses: Record<string, any>) => {
+  mockInvokeResponses = { ...mockInvokeResponses, ...responses };
+  window.__mockInvokeResponses = mockInvokeResponses;
+};
 
 // Mock @tauri-apps/api/window
-const mockWindow = {
+const mockWindow: any = {
   onResized: jest.fn(),
   onMoved: jest.fn(),
   getState: jest.fn(() => ({
@@ -152,3 +155,24 @@ const mockWindow = {
 jest.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => mockWindow,
 }));
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});

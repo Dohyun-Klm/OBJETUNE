@@ -81,7 +81,10 @@ export const MusicCard: React.FC<MusicCardProps> = ({
       tabIndex={0}
       aria-label={track.title}
     >
-      <div className="vw-music-card__image" />
+      <div 
+        className="vw-music-card__image"
+        style={{ backgroundImage: track.thumbnail && !track.thumbnail.startsWith('🎵') ? `url("${track.thumbnail}")` : undefined }}
+      />
       <div className="vw-music-card__info">
         <button
           className={`vw-music-card__favorite-btn ${track.isFavorite ? 'vw-music-card__favorite-btn--active' : ''}`}
