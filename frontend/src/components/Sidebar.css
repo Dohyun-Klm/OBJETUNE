@@ -1,12 +1,12 @@
-/* Sidebar Component - Vintage Walnut */
+/* Sidebar Component - Modern Dark */
 .vw-sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   width: 240px;
-  background: var(--vw-bg-card);
-  border-right: 2px solid var(--vw-wood-primary);
+  background: var(--vw-bg-secondary);
+  border-right: 2px solid var(--vw-amber-dark);
   padding: 1rem 0;
   display: flex;
   flex-direction: column;
@@ -17,7 +17,7 @@
   padding: 1rem 1.5rem;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--vw-wood-primary);
+  color: var(--vw-text-primary);
   background: var(--vw-gradient-amber);
   border-bottom: 1px solid var(--vw-amber-dark);
   margin-bottom: 1rem;
@@ -28,8 +28,8 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: var(--vw-amber-bg);
-  border-bottom: 1px solid var(--vw-amber-dark);
+  background: var(--vw-bg-secondary);
+  border-bottom: 1px solid var(--vw-silver);
   margin-bottom: 0.5rem;
 }
 
@@ -37,24 +37,26 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--vw-wood-dark);
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
   border: 2px solid transparent;
+  background: transparent;
+  color: var(--vw-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .vw-sidebar__mode-btn:hover {
-  background: var(--vw-amber-bg);
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
   transform: scale(1.1);
 }
 
 .vw-sidebar__mode-btn--active {
-  background: var(--vw-wood-primary);
+  background: var(--vw-amber-primary);
   color: var(--vw-bg-primary);
-  border-color: var(--vw-amber-dark);
+  border-color: var(--vw-amber-primary);
 }
 
 .vw-sidebar__nav {
@@ -77,8 +79,8 @@
 .vw-sidebar__nav-item:hover,
 .vw-sidebar__nav-item--active {
   background: var(--vw-amber-bg);
-  border-left-color: var(--vw-amber-dark);
-  color: var(--vw-wood-dark);
+  border-left-color: var(--vw-amber-primary);
+  color: var(--vw-text-primary);
 }
 
 .vw-sidebar__nav-item--active {
@@ -89,7 +91,18 @@
   width: 20px;
   height: 20px;
   margin-right: 1rem;
-  opacity: 0.8;
+  opacity: 0.9;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vw-sidebar__icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
 }
 
 /* 반응형 */

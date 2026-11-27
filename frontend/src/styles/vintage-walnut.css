@@ -1,44 +1,44 @@
 /*
- * Vintage Walnut Design System
- * 1970년대 빈티지 레코드샵 분위기
- * 월넛 우드 질감, 따뜻한 앰버 조명, 아이보리 텍스트
+ * Objetune Design System
+ * Modern Dark Mode with Red Accent
+ * Virtual Vinyl inspired aesthetic
  */
 
 /* 색상 토큰 */
 :root {
-  /* 베이스 컬러 - Vintage Walnut */
-  --vw-bg-primary: #f5f0e6;     /* 아이보리 배경 */
-  --vw-bg-secondary: #e6d8c3;    /* 밝은 벌크 */
-  --vw-bg-card: #d4c0a8;         /* 카드 배경 */
-  --vw-bg-accent: #c9a67b;       /* 강조 배경 */
+  /* 베이스 컬러 - Modern Dark */
+  --vw-bg-primary: #0a0a0a;       /* 다크 모드 배경 */
+  --vw-bg-secondary: #121212;     /* 다크 카드 */
+  --vw-bg-card: #1a1a1a;          /* 카드 배경 */
+  --vw-bg-accent: #ff0000;        /* 레드 애센트 */
   
-  /* 월넛 우드 */
-  --vw-wood-primary: #8b6d47;    /* 메인 우드 */
-  --vw-wood-dark: #6b4f2e;       /* 어두운 우드 */
-  --vw-wood-light: #a88a6b;      /* 밝은 우드 */
+  /* 월넛 우드 (사용하지 않음, 다크 모드로 대체) */
+  --vw-wood-primary: #8b6d47;
+  --vw-wood-dark: #6b4f2e;
+  --vw-wood-light: #a88a6b;
   
   /* 텍스트 */
-  --vw-text-primary: #2c1f0d;    /* 검은색 텍스트 (아이보리 대비) */
-  --vw-text-secondary: #5a462c;   /* 옅은 갈색 텍스트 */
-  --vw-text-disabled: #8a7a62;    /* 비활성화 텍스트 */
+  --vw-text-primary: #ffffff;     /* 흰색 텍스트 */
+  --vw-text-secondary: #b0b0b0;   /* 회색 텍스트 */
+  --vw-text-disabled: #666666;    /* 회색 텍스트 */
   
-  /* 앰버 라이트 */
-  --vw-amber-primary: #d4a55f;   /* 앰버 라이트 */
-  --vw-amber-dark: #b8863c;      /* 어두운 앰버 */
+  /* 레드 애센트 */
+  --vw-amber-primary: #ff0000;    /* 레드 */
+  --vw-amber-dark: #cc0000;       /* 어두운 레드 */
   
-  /* 브ラک */
-  --vw-black-primary: #1a1208;    /* 검은색 */
-  --vw-black-dark: #0d0a04;       /* 진한 검은색 */
+  /* 브랙 */
+  --vw-black-primary: #000000;
+  --vw-black-dark: #000000;
   
   /* 실버 */
-  --vw-silver: #c0b09a;           /* 은색 */
+  --vw-silver: #333333;
   
-  /* 앰б 배경 */
-  --vw-amber-bg: #f0e6d6;         /* 앰브 배경 */
+  /* 다크 배경 */
+  --vw-amber-bg: #1a1a1a;
   
   /* 그라데이션 */
-  --vw-gradient-walnut: linear-gradient(135deg, #8b6d47 0%, #a88a6b 50%, #6b4f2e 100%);
-  --vw-gradient-amber: linear-gradient(135deg, #d4a55f 0%, #f0e6d6 100%);
+  --vw-gradient-walnut: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  --vw-gradient-amber: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
 }
 
 /* 레이아웃 기본 */
@@ -52,6 +52,15 @@
   overflow: hidden;
 }
 
+/* 메인 컨텐츠 */
+.vw-main {
+  flex: 1;
+  margin-left: 240px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* 사이드바 */
 .vw-sidebar {
   position: fixed;
@@ -59,8 +68,8 @@
   left: 0;
   height: 100vh;
   width: 240px;
-  background: var(--vw-bg-card);
-  border-right: 2px solid var(--vw-wood-primary);
+  background: var(--vw-bg-secondary);
+  border-right: 2px solid var(--vw-amber-dark);
   padding: 1rem 0;
   display: flex;
   flex-direction: column;
@@ -71,10 +80,46 @@
   padding: 1rem 1.5rem;
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--vw-wood-primary);
+  color: var(--vw-text-primary);
   background: var(--vw-gradient-amber);
   border-bottom: 1px solid var(--vw-amber-dark);
   margin-bottom: 1rem;
+}
+
+.vw-sidebar__mode-switch {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--vw-bg-secondary);
+  border-bottom: 1px solid var(--vw-silver);
+  margin-bottom: 0.5rem;
+}
+
+.vw-sidebar__mode-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--vw-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.vw-sidebar__mode-btn:hover {
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  transform: scale(1.1);
+}
+
+.vw-sidebar__mode-btn--active {
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  border-color: var(--vw-amber-primary);
 }
 
 .vw-sidebar__nav {
@@ -97,8 +142,8 @@
 .vw-sidebar__nav-item:hover,
 .vw-sidebar__nav-item--active {
   background: var(--vw-amber-bg);
-  border-left-color: var(--vw-amber-dark);
-  color: var(--vw-wood-dark);
+  border-left-color: var(--vw-amber-primary);
+  color: var(--vw-text-primary);
 }
 
 .vw-sidebar__nav-item--active {
@@ -109,51 +154,18 @@
   width: 20px;
   height: 20px;
   margin-right: 1rem;
-  opacity: 0.8;
-}
-
-/* 메인 컨텐츠 */
-.vw-main {
-  flex: 1;
-  margin-left: 240px;
+  opacity: 0.9;
+  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* 검색바 */
-.vw-search-bar {
-  padding: 1rem 1.5rem 0.5rem;
-  display: flex;
-  gap: 0.5rem;
   align-items: center;
-  background: var(--vw-amber-bg);
-  border-bottom: 1px solid var(--vw-amber-dark);
+  justify-content: center;
 }
 
-.vw-search-bar__input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--vw-silver);
-  border-radius: 4px;
-  font-size: 1rem;
-  background: var(--vw-bg-primary);
-  color: var(--vw-text-primary);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.vw-search-bar__input:focus {
-  border-color: var(--vw-amber-dark);
-}
-
-.vw-search-bar__filter {
-  padding: 0.5rem;
-  border: 1px solid var(--vw-silver);
-  border-radius: 4px;
-  background: var(--vw-bg-primary);
-  cursor: pointer;
-  color: var(--vw-text-secondary);
+.vw-sidebar__icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
 }
 
 /* 콘텐츠 영역 */
@@ -161,6 +173,7 @@
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
+  background: var(--vw-bg-primary);
 }
 
 .vw-content__header {
@@ -169,13 +182,13 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--vw-amber-dark);
+  border-bottom: 1px solid var(--vw-silver);
 }
 
 .vw-content__title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-primary);
   margin: 0;
 }
 
@@ -194,19 +207,21 @@
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .vw-music-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(109, 79, 46, 0.15);
-  border-color: var(--vw-wood-light);
+  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.2);
+  border-color: var(--vw-amber-primary);
 }
 
 .vw-music-card__image {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: linear-gradient(45deg, var(--vw-wood-light), var(--vw-wood-primary));
+  background: linear-gradient(45deg, #ff0000, #cc0000);
 }
 
 .vw-music-card__info {
@@ -216,7 +231,7 @@
 .vw-music-card__title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-primary);
   margin: 0 0 0.25rem 0;
   white-space: nowrap;
   overflow: hidden;
@@ -235,6 +250,99 @@
   margin: 0;
 }
 
+/* 카드 아이콘 */
+.vw-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vw-card__icon svg {
+  color: currentColor;
+}
+
+.vw-music-card__favorite-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--vw-bg-secondary);
+  color: var(--vw-text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vw-music-card:hover .vw-music-card__favorite-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vw-music-card__favorite-btn:hover {
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  transform: scale(1.1);
+}
+
+.vw-music-card__favorite-btn--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vw-music-card__play-btn,
+.vw-music-card__queue-btn {
+  position: absolute;
+  top: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--vw-text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vw-music-card:hover .vw-music-card__play-btn,
+.vw-music-card:hover .vw-music-card__queue-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vw-music-card__play-btn:hover,
+.vw-music-card__queue-btn:hover {
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  transform: scale(1.1);
+}
+
+.vw-music-card__play-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.vw-music-card__queue-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.vw-music-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 /* 미니 플레이어 */
 .vw-mini-player {
   position: fixed;
@@ -243,7 +351,7 @@
   right: 0;
   height: 60px;
   background: var(--vw-bg-card);
-  border-top: 2px solid var(--vw-wood-primary);
+  border-top: 1px solid var(--vw-silver);
   padding: 0 1rem;
   display: flex;
   align-items: center;
@@ -255,7 +363,8 @@
   width: 48px;
   height: 48px;
   border-radius: 4px;
-  background: var(--vw-gradient-amber);
+  background: linear-gradient(45deg, #ff0000, #cc0000);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
 }
 
 .vw-mini-player__info {
@@ -263,12 +372,13 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
 }
 
 .vw-mini-player__title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -292,7 +402,7 @@
   height: 24px;
   border: none;
   background: transparent;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -302,27 +412,46 @@
 }
 
 .vw-mini-player__btn:hover {
-  background: var(--vw-amber-bg);
-  color: var(--vw-amber-dark);
+  background: var(--vw-amber-primary);
+  color: var(--vw-bg-primary);
+  transform: scale(1.1);
+}
+
+.vw-mini-player__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vw-mini-player__icon svg {
+  color: currentColor;
 }
 
 .vw-mini-player__play {
   width: 32px;
   height: 32px;
+  border-radius: 50%;
   border: none;
   background: var(--vw-gradient-amber);
-  color: var(--vw-black-primary);
-  border-radius: 50%;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 
+    0 4px 16px rgba(255, 0, 0, 0.4),
+    0 0 20px rgba(255, 0, 0, 0.2);
+  z-index: 2;
 }
 
 .vw-mini-player__play:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
+  box-shadow: 
+    0 6px 20px rgba(255, 0, 0, 0.6),
+    0 0 30px rgba(255, 0, 0, 0.4);
 }
 
 /* 버튼 */
@@ -334,25 +463,31 @@
   font-size: 0.9rem;
   font-weight: 600;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s Ease;
-  background: var(--vw-wood-primary);
+  transition: all 0.2s ease;
+  background: var(--vw-amber-primary);
   color: var(--vw-bg-primary);
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
 }
 
 .vw-btn:hover {
-  background: var(--vw-wood-light);
+  background: var(--vw-amber-dark);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
 }
 
 .vw-btn--secondary {
-  background: var(--vw-amber-dark);
-  color: var(--vw-bg-primary);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vw-text-secondary);
+  border: 1px solid var(--vw-silver);
+  backdrop-filter: blur(10px);
 }
 
 .vw-btn--secondary:hover {
-  background: var(--vw-amber-primary);
+  background: var(--vw-bg-card);
+  color: var(--vw-text-primary);
+  border-color: var(--vw-amber-primary);
 }
 
 .vw-btn:disabled {
@@ -376,19 +511,21 @@
   width: 80px;
   height: 80px;
   margin-bottom: 1rem;
-  opacity: 0.6;
+  opacity: 0.5;
+  filter: grayscale(50%);
 }
 
 .vw-empty-state__title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .vw-empty-state__description {
   font-size: 0.9rem;
   margin: 0;
+  color: var(--vw-text-secondary);
 }
 
 /* 로딩 상태 */
@@ -403,7 +540,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid var(--vw-silver);
-  border-top-color: var(--vw-wood-primary);
+  border-top-color: var(--vw-amber-primary);
   border-radius: 50%;
   animation: vw-spin 1s linear infinite;
 }
@@ -417,8 +554,9 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: var(--vw-amber-bg);
-  border-radius: 6px;
+  background: var(--vw-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--vw-silver);
 }
 
 .vw-platform-filter__btn {
@@ -426,22 +564,23 @@
   padding: 0.4rem;
   font-size: 0.8rem;
   border: 1px solid var(--vw-silver);
-  background: var(--vw-bg-primary);
+  background: var(--vw-bg-card);
   color: var(--vw-text-secondary);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .vw-platform-filter__btn:hover {
-  background: var(--vw-amber-bg);
-  color: var(--vw-wood-dark);
+  background: var(--vw-bg-card);
+  color: var(--vw-text-primary);
+  border-color: var(--vw-amber-primary);
 }
 
 .vw-platform-filter__btn--active {
-  background: var(--vw-wood-primary);
+  background: var(--vw-amber-primary);
   color: var(--vw-bg-primary);
-  border-color: var(--vw-wood-primary);
+  border-color: var(--vw-amber-primary);
 }
 
 /* 반응형 */
@@ -506,54 +645,52 @@
   aspect-ratio: 1;
   margin: 2rem auto;
   background: var(--vw-gradient-amber);
-  border: 6px solid var(--vw-wood-primary);
+  border: 4px solid var(--vw-amber-dark);
   border-radius: 50%;
   box-shadow: 
-    0 8px 32px rgba(109, 79, 46, 0.25),
-    inset 0 0 20px rgba(212, 165, 95, 0.15);
+    0 10px 40px rgba(0, 0, 0, 0.4),
+    inset 0 0 30px rgba(255, 0, 0, 0.1);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 턴테이블 본체 - 월넛 우드 패턴 */
+/* 턴테이블 본체 - 다크 모드 */
 .vw-turntable__body {
   position: absolute;
   width: 90%;
   height: 90%;
   background: 
-    /* 월넛 우드 텍스처를 시뮬레이션 */
     linear-gradient(135deg, 
-      var(--vw-wood-primary) 0%, 
-      var(--vw-wood-light) 35%, 
-      var(--vw-wood-primary) 70%, 
-      var(--vw-wood-dark) 100%
+      #000000 0%, 
+      #111111 35%, 
+      #000000 70%, 
+      #000000 100%
     ),
-    /* 섬광 무늬 추가 */
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 25%),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.06) 0%, transparent 25%);
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 20%),
+    radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 20%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* LP 원판 */
+/* LP 원판 - 다크 모드 */
 .vw-vinyl {
   position: relative;
   width: 420px;
   height: 420px;
   border-radius: 50%;
-  background: linear-gradient(135deg, 
-    #1a1208 0%, 
-    #0d0a04 50%, 
-    #1a1208 100%
+  background: radial-gradient(ellipse at center, 
+    #0a0a0a 0%, 
+    #000000 100%
   );
-  border: 4px solid var(--vw-wood-primary);
+  border: 3px solid #444444;
+  border-top: 3px solid #ff0000;
   box-shadow: 
-    0 0 30px rgba(0, 0, 0, 0.4),
-    inset 0 0 10px rgba(0, 0, 0, 0.5);
+    0 0 25px rgba(0, 0, 0, 0.6),
+    inset 0 0 8px rgba(0, 0, 0, 0.5);
   animation: vw-spinVinyl 100s linear infinite;
   transform-origin: center;
 }
@@ -569,19 +706,19 @@
   animation-play-state: paused;
 }
 
-/* HP (Hunting Lamp) 조명 */
+/* HP (Hunting Lamp) 조명 - 레드 */
 .vw-hp-light {
   position: absolute;
   width: 40px;
   height: 80px;
   background: linear-gradient(to bottom, 
-    rgba(212, 165, 95, 0.8) 0%, 
-    rgba(184, 134, 60, 0.6) 50%, 
-    rgba(212, 165, 95, 0.2) 100%
+    rgba(255, 0, 0, 0.8) 0%, 
+    rgba(204, 0, 0, 0.6) 50%, 
+    rgba(255, 0, 0, 0.2) 100%
   );
   border-radius: 50% 50% 0 0;
-  filter: blur(2px);
-  box-shadow: 0 0 20px var(--vw-amber-primary);
+  filter: blur(3px);
+  box-shadow: 0 0 25px #ff0000;
   animation: vw-hpPulse 2s ease-in-out infinite;
   z-index: 2;
 }
@@ -594,9 +731,9 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--vw-wood-dark);
+  background: #2a2a2a;
   border-radius: 50%;
-  border: 2px solid var(--vw-wood-primary);
+  border: 2px solid #444444;
   z-index: 3;
 }
 
@@ -620,8 +757,9 @@
 
 /* 라벨에 아트워크가 있는 경우 */
 .vw-vinyl__label--artwork {
-  background: #000;
+  background: #000000;
   border-color: var(--vw-amber-primary);
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
 }
 
 .vw-vinyl__label__artwork-img {
@@ -640,15 +778,15 @@
   gap: 0.25rem;
   font-size: 10px;
   text-align: center;
-  color: var(--vw-wood-dark);
+  color: var(--vw-text-secondary);
 }
 
 .vw-vinyl__label__default-text {
   font-weight: 700;
-  color: var(--vw-amber-dark);
+  color: var(--vw-amber-primary);
 }
 
-/* 톤암 */
+/* 톤암 - 메탈리크 스타일 */
 .vw-tonearm {
   position: absolute;
   width: 180px;
@@ -656,14 +794,15 @@
   top: 15%;
   right: 15%;
   background: linear-gradient(to right, 
-    var(--vw-wood-primary) 0%, 
-    var(--vw-wood-light) 100%
+    #444444 0%, 
+    #666666 100%
   );
   border-radius: 20px 0 0 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
   transform: rotate(25deg);
   transform-origin: left center;
   z-index: 4;
+  border: 1px solid #333333;
 }
 
 .vw-tonearm::before {
@@ -674,11 +813,12 @@
   transform: translateY(-50%);
   width: 30px;
   height: 8px;
-  background: var(--vw-wood-dark);
+  background: #2a2a2a;
   border-radius: 4px;
+  border: 1px solid #444444;
 }
 
-/* 톤젤 (Tonearm Head) */
+/* 톤젤 (Tonearm Head) - 레드 포인트 */
 .vw-tonearm__head {
   position: absolute;
   right: -4px;
@@ -686,13 +826,14 @@
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  background: var(--vw-black-primary);
+  background: #1a1a1a;
   border-radius: 50%;
-  border: 2px solid var(--vw-wood-primary);
+  border: 2px solid var(--vw-amber-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 5;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .vw-tonearm__head::after {
@@ -702,7 +843,7 @@
   height: 8px;
   background: var(--vw-amber-primary);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--vw-amber-primary);
+  box-shadow: 0 0 12px #ff0000;
 }
 
 /* 톤암 피벗 (Pivot) */
@@ -713,13 +854,13 @@
   transform: translateY(-50%);
   width: 12px;
   height: 12px;
-  background: var(--vw-wood-dark);
-  border: 2px solid var(--vw-wood-primary);
+  background: #2a2a2a;
+  border: 2px solid #444444;
   border-radius: 50%;
   z-index: 6;
 }
 
-/* 재생/일시정지 버튼 */
+/* 재생/일시정지 버튼 - 레드 */
 .vw-turntable__play-btn {
   position: absolute;
   bottom: 20px;
@@ -730,18 +871,22 @@
   border-radius: 50%;
   border: none;
   background: var(--vw-gradient-amber);
-  color: var(--vw-black-primary);
+  color: #ffffff;
   font-size: 24px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(109, 79, 46, 0.3);
+  box-shadow: 
+    0 4px 16px rgba(255, 0, 0, 0.4),
+    0 0 20px rgba(255, 0, 0, 0.2);
   transition: all 0.2s ease;
   z-index: 10;
 }
 
 .vw-turntable__play-btn:hover {
   transform: translateX(-50%) scale(1.1);
-  box-shadow: 0 6px 16px rgba(109, 79, 46, 0.4);
+  box-shadow: 
+    0 6px 20px rgba(255, 0, 0, 0.6),
+    0 0 30px rgba(255, 0, 0, 0.3);
 }
 
 .vw-turntable__play-btn--playing::after {
