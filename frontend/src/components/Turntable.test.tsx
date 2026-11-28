@@ -122,6 +122,16 @@ describe('Turntable', () => {
     rerender(<Turntable {...props} playbackState="stopped" progress={1} />);
     expect(tonearm).toHaveStyle('transform: rotate(-12deg)');
   });
+
+  it('exposes elapsed time and lets the user seek to a new position', () => {
+    const onSeek = jest.fn();
+    render(<Turntable nowPlaying={mockNowPlaying} playbackState="paused" onPlayPause={() => {}}
+      position={30} duration={180} onSeek={onSeek} />);
+    const slider = screen.getByRole('slider', { name: '재생 위치' });
+    expect(slider).toHaveAttribute('aria-valuetext', '0:30 / 3:00');
+    fireEvent.change(slider, { target: { value: '75' } });
+    expect(onSeek).toHaveBeenCalledWith(75);
+  });
 });
 
 describe('VinylRecord (via Turntable)', () => {

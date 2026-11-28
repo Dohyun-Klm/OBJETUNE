@@ -9,6 +9,7 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { EmptyState } from './components/EmptyState';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
+import { PlaybackIcon } from './components/PlaybackControls';
 import {
   Track,
   AppMode,
@@ -155,28 +156,28 @@ function App() {
 
   const isTurntableMode = currentMode === 'turntable';
   const turntableTrack = nowPlaying.track;
-  const [tonearmPosition, setTonearmPosition] = useState<{ track: Track; progress: number } | null>(null);
+  const [timeline, setTimeline] = useState<{ track: Track; position: number; duration: number } | null>(null);
+  const seekGraceUntil = useRef(0);
+  const position = timeline?.track === turntableTrack ? timeline.position : 0;
+  const duration = timeline?.track === turntableTrack ? timeline.duration : nowPlaying.duration;
 
   useEffect(() => {
-    if (!isTurntableMode || !turntableTrack.id || turntablePlaybackState === 'stopped') {
-      setTonearmPosition(null);
-      return;
-    }
+    if (!turntableTrack.id || turntablePlaybackState === 'stopped') return;
 
     const updatePosition = () => {
-      if (playerManager.getCurrentTrack()?.id !== turntableTrack.id) return;
+      if (playerManager.getCurrentTrack()?.id !== turntableTrack.id || Date.now() < seekGraceUntil.current) return;
       const elapsed = playerManager.getCurrentTimeSync();
       const duration = playerManager.getDurationSync();
       if (Number.isFinite(elapsed) && Number.isFinite(duration) && duration > 0) {
-        setTonearmPosition({ track: turntableTrack, progress: elapsed / duration });
+        setTimeline(previous => previous?.track === turntableTrack && previous.position === elapsed && previous.duration === duration
+          ? previous : { track: turntableTrack, position: elapsed, duration });
       }
     };
 
     updatePosition();
-    if (turntablePlaybackState !== 'playing') return;
-    const timer = window.setInterval(updatePosition, 250);
+    const timer = window.setInterval(updatePosition, turntablePlaybackState === 'playing' ? 250 : 500);
     return () => window.clearInterval(timer);
-  }, [isTurntableMode, turntableTrack, turntablePlaybackState]);
+  }, [turntableTrack, turntablePlaybackState]);
 
   // 플랫폼 API 로드
   useEffect(() => {
@@ -204,7 +205,7 @@ function App() {
     }
 
     const pauseSub = playerManager.on('pause', (event) => {
-      setTurntablePlaybackState('paused');
+      setTurntablePlaybackState(prev => prev === 'stopped' ? prev : 'paused');
       setNowPlaying(prev => ({ ...prev, isPlaying: false }));
     });
     if (pauseSub && typeof pauseSub.unsubscribe === 'function') {
@@ -278,6 +279,8 @@ function App() {
       duration: loadedTrack.duration,
     }));
     setTurntablePlaybackState('paused');
+    seekGraceUntil.current = 0;
+    setTimeline(null);
     await playerManager.play();
     setQueue(prev => {
       const existing = prev.findIndex(item => item.id === loadedTrack.id);
@@ -361,6 +364,29 @@ function App() {
     } catch (err) {
       const message = err instanceof Error ? err.message : '재생 제어 중 오류가 발생했습니다';
       setError(message);
+    }
+  };
+
+  const handleSeek = async (seconds: number) => {
+    if (!turntableTrack.id || duration <= 0 || !Number.isFinite(seconds)) return;
+    const target = Math.max(0, Math.min(seconds, duration));
+    try {
+      await playerManager.seekTo(target);
+      seekGraceUntil.current = Date.now() + 450;
+      setTimeline({ track: turntableTrack, position: target, duration });
+    } catch {
+      setError('재생 위치를 이동하지 못했습니다.');
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      await playerManager.stop();
+      setNowPlaying(prev => ({ ...prev, isPlaying: false }));
+      setTurntablePlaybackState('stopped');
+      setTimeline({ track: turntableTrack, position: 0, duration });
+    } catch {
+      setError('재생을 정지하지 못했습니다.');
     }
   };
 
@@ -449,7 +475,11 @@ function App() {
               <Turntable
                   nowPlaying={nowPlaying}
                   playbackState={turntablePlaybackState}
-                  progress={tonearmPosition?.track === turntableTrack ? tonearmPosition.progress : 0}
+                  progress={duration > 0 ? position / duration : 0}
+                  position={position}
+                  duration={duration}
+                  onSeek={handleSeek}
+                  onStop={handleStop}
                   onPlayPause={handlePlayPause}
                   onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
                   onNext={nextTrack ? handleNext : undefined}
@@ -523,6 +553,10 @@ function App() {
                 {/* 미니 플레이어 */}
                 <MiniPlayer
                   nowPlaying={nowPlaying}
+                  position={position}
+                  duration={duration}
+                  onSeek={handleSeek}
+                  onStop={handleStop}
                   onPlayPause={handlePlayPause}
                   onNext={nextTrack ? handleNext : undefined}
                   onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
@@ -551,8 +585,9 @@ function App() {
             </section>
           )}
           <button type="button" className="vw-session-queue__toggle" aria-expanded={queuePanelOpen} aria-controls={queuePanelOpen ? 'session-queue' : undefined}
+            aria-label={`대기열${upcoming.length ? ` ${upcoming.length}` : ''}`} title={queuePanelOpen ? '대기열 닫기' : '대기열 열기'}
             onClick={() => setQueuePanelOpen(prev => !prev)}>
-            대기열{upcoming.length > 0 ? ` ${upcoming.length}` : ''}
+            <PlaybackIcon name="queue" />
           </button>
         </div>
       </div>

@@ -90,8 +90,6 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
         )}
       </div>
       
-      {/* 레코드 스크류 (LP 질감 표현) */}
-      <div className="vw-vinyl__groove" />
     </div>
   );
 };

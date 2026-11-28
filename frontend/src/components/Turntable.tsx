@@ -1,11 +1,17 @@
 import React from 'react';
 import { VinylRecord } from './VinylRecord';
 import { NowPlaying, PlaybackState } from '../types';
+import { PlaybackIcon, PlaybackProgress } from './PlaybackControls';
+import { Tonearm } from './Tonearm';
 
 interface TurntableProps {
   nowPlaying: NowPlaying | null;
   playbackState: PlaybackState;
   progress?: number;
+  position?: number;
+  duration?: number;
+  onSeek?: (seconds: number) => void;
+  onStop?: () => void;
   onPlayPause: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
@@ -18,6 +24,10 @@ export const Turntable: React.FC<TurntableProps> = ({
   nowPlaying,
   playbackState,
   progress = 0,
+  position = 0,
+  duration = 0,
+  onSeek,
+  onStop,
   onPlayPause,
   onPrevious,
   onNext,
@@ -50,13 +60,7 @@ export const Turntable: React.FC<TurntableProps> = ({
               coverArtUrl={dynamicLabel ? nowPlaying?.track?.coverArtUrl : undefined}
               dynamicLabel={dynamicLabel}
             />
-            <div className="vw-tonearm" style={{ transform: `rotate(${tonearmAngle}deg)` }} data-testid="tonearm" aria-hidden="true">
-              <div className="vw-tonearm__pivot" data-testid="tonearm-pivot" />
-              <div className="vw-tonearm__assembly">
-                <div className="vw-tonearm__tube" />
-                <div className="vw-tonearm__head" data-testid="tonearm-head" />
-              </div>
-            </div>
+            <Tonearm angle={tonearmAngle} />
             <div className="vw-hp-light" aria-hidden="true" data-testid="hp-light" />
           </div>
         </div>
@@ -68,6 +72,7 @@ export const Turntable: React.FC<TurntableProps> = ({
           <h1 className="vw-player-screen__title">{track?.title || 'Choose a record'}</h1>
           <p className="vw-player-screen__artist">{track?.artist || 'Select a track from your Library'}</p>
         </header>
+        {onSeek && <PlaybackProgress key={track?.id} position={position} duration={duration} onSeek={onSeek} />}
         <div className="vw-player-controls" role="group" aria-label="Playback controls">
           {onPrevious && (
             <button
@@ -76,8 +81,9 @@ export const Turntable: React.FC<TurntableProps> = ({
               onClick={onPrevious}
               disabled={!hasTrack}
               aria-label="Previous track"
+              title="이전 곡"
             >
-              ‹‹
+              <PlaybackIcon name="previous" />
             </button>
           )}
           {showPlayButton && (
@@ -87,8 +93,15 @@ export const Turntable: React.FC<TurntableProps> = ({
               onClick={onPlayPause}
               disabled={!hasTrack}
               aria-label={isPlaying ? 'Pause' : 'Play'}
+              title={isPlaying ? '일시정지' : '재생'}
             >
-              {isPlaying ? 'Ⅱ' : '▶'}
+              <PlaybackIcon name={isPlaying ? 'pause' : 'play'} />
+            </button>
+          )}
+          {onStop && (
+            <button className="vw-player-controls__secondary" type="button" onClick={onStop}
+              disabled={!hasTrack} aria-label="Stop" title="정지">
+              <PlaybackIcon name="stop" />
             </button>
           )}
           {onNext && (
@@ -98,8 +111,9 @@ export const Turntable: React.FC<TurntableProps> = ({
               onClick={onNext}
               disabled={!hasTrack}
               aria-label="Next track"
+              title="다음 곡"
             >
-              ››
+              <PlaybackIcon name="next" />
             </button>
           )}
         </div>

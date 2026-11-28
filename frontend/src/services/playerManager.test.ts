@@ -7,10 +7,11 @@ it('replaces the YouTube iframe without removing its dock and reports native pau
   document.body.appendChild(dock);
   const originalYouTube = window.YT;
   let changeState: (state: number) => void = () => {};
+  const seekTo = jest.fn();
   const Player = jest.fn((elementId: string, options: YT.PlayerOptions) => {
     const frame = document.createElement('iframe');
     document.getElementById(elementId)?.replaceWith(frame);
-    const instance = { destroy: () => frame.remove(), getCurrentTime: () => 1, getDuration: () => 100 };
+    const instance = { destroy: () => frame.remove(), getCurrentTime: () => 1, getDuration: () => 100, seekTo };
     const target = instance as unknown as YT.Player;
     changeState = data => options.events?.onStateChange?.({ target, data, type: 'onStateChange' });
     Promise.resolve().then(() => options.events?.onReady?.({ target, type: 'onReady' }));
@@ -29,6 +30,8 @@ it('replaces the YouTube iframe without removing its dock and reports native pau
     changeState(1);
     changeState(2);
     expect(pause).toHaveBeenCalled();
+    await playerManager.seekTo(150);
+    expect(seekTo).toHaveBeenCalledWith(100, true);
     await playerManager.load({ ...track, id: 'youtube-second', platformId: 'second' });
     expect(document.getElementById(dock.id)).toBe(dock);
     expect(dock.querySelectorAll('iframe')).toHaveLength(1);
@@ -64,6 +67,7 @@ it('uses the SoundCloud Widget title and artwork while keeping the saved track i
 
   const events = new Map<string, () => void>();
   const widget = {
+    seekTo: jest.fn(),
     bind: (event: string, callback: () => void) => events.set(event, callback),
     getCurrentSound: (callback: (sound: object) => void) => callback({
       title: 'Still With You by JK of BTS',
@@ -92,6 +96,8 @@ it('uses the SoundCloud Widget title and artwork while keeping the saved track i
       coverArtUrl: artwork,
       duration: 240,
     });
+    await playerManager.seekTo(37.5);
+    expect(widget.seekTo).toHaveBeenCalledWith(37500);
   } finally {
     playerManager.destroy();
     window.SC = originalSoundCloud;

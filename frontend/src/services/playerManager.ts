@@ -180,13 +180,15 @@ class PlayerManager implements PlayerManagerInterface {
               this.duration = milliseconds / 1000;
             }
           });
-          widget.bind(events.PLAY_PROGRESS, ({ currentPosition, relativePosition }: { currentPosition: number; relativePosition?: number }) => {
+          const updatePosition = ({ currentPosition, relativePosition }: { currentPosition: number; relativePosition?: number }) => {
             if (this.soundcloudWidget !== widget || !Number.isFinite(currentPosition)) return;
             this.currentTime = currentPosition / 1000;
             if (!this.duration && relativePosition && relativePosition > 0) {
               this.duration = this.currentTime / relativePosition;
             }
-          });
+          };
+          widget.bind(events.PLAY_PROGRESS, updatePosition);
+          if (events.SEEK) widget.bind(events.SEEK, updatePosition);
           widget.bind(events.READY, () => {
             widget.getCurrentSound((sound: SoundCloudSound | null) => {
               if (this.soundcloudWidget !== widget) return;
@@ -383,15 +385,9 @@ class PlayerManager implements PlayerManagerInterface {
 
   // 정지
   async stop(): Promise<void> {
-    if (!this.currentTrack) return;
-    
-    if (this.currentTrack.platform === 'youtube' && this.youtubePlayer) {
-      this.youtubePlayer.stopVideo();
-      this.isPlaying = false;
-    } else if (this.currentTrack.platform === 'soundcloud' && this.soundcloudWidget) {
-      this.soundcloudWidget.stop();
-      this.isPlaying = false;
-    }
+    await this.pause();
+    await this.seekTo(0);
+    this.isPlaying = false;
   }
 
   // 볼륨 설정 (0-100)
@@ -430,11 +426,14 @@ class PlayerManager implements PlayerManagerInterface {
 
   // seekTo
   async seekTo(time: number): Promise<void> {
+    if (!Number.isFinite(time)) return;
+    const duration = this.getDurationSync();
+    time = Math.max(0, duration > 0 ? Math.min(duration, time) : time);
     if (this.currentTrack?.platform === 'youtube' && this.youtubePlayer) {
       this.youtubePlayer.seekTo(time, true);
       this.currentTime = time;
     } else if (this.currentTrack?.platform === 'soundcloud' && this.soundcloudWidget) {
-      this.soundcloudWidget.seekTo(time * 1000, true);
+      this.soundcloudWidget.seekTo(Math.round(time * 1000));
       this.currentTime = time;
     }
     

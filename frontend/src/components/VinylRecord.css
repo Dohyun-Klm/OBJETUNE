@@ -5,11 +5,12 @@
   height: auto;
   aspect-ratio: 1;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 2px solid #060606;
   border-radius: 50%;
   background:
-    repeating-radial-gradient(circle at center, transparent 0 7px, rgba(255, 255, 255, 0.08) 8px, transparent 9px 13px),
-    radial-gradient(circle at center, #24211e 0 16%, #11100f 17% 52%, #211e1b 53% 54%, #0b0b0a 55% 100%);
+    radial-gradient(circle, #080808 0 34%, transparent 35% 97%, #080808 99%),
+    repeating-radial-gradient(circle, #ffffff0b 0 0.45px, #0004 0.65px 1.25px, transparent 1.4px 2.5px),
+    repeating-radial-gradient(circle, #131313 0 7.4%, #080808 7.65% 8%, #1e1f20 8.45% 9%);
   box-shadow:
     inset 0 0 35px rgba(0, 0, 0, 0.9),
     0 18px 35px rgba(0, 0, 0, 0.38),
@@ -21,10 +22,9 @@
 .vw-vinyl::before {
   content: '';
   position: absolute;
-  inset: 5%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  inset: 0;
+  border: 1px solid #ffffff12;
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.1), transparent 40%);
   pointer-events: none;
   z-index: 8;
 }
@@ -33,11 +33,11 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(70px, 23%, 112px);
+  width: 33%;
   aspect-ratio: 1;
-  border: 2px solid rgba(74, 46, 25, 0.65);
+  border: 1px solid #bdb29a35;
   border-radius: 50%;
-  background: radial-gradient(circle, #f0cb82 0%, #dca453 76%, #b97936 100%);
+  background: radial-gradient(circle, #292825 0 8%, #161616 9% 68%, #9d90784d 69% 70%, #121212 72%);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
@@ -68,7 +68,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
-  color: #50371f;
+  color: #e6ded0;
   font-family: Georgia, 'Times New Roman', serif;
   text-align: center;
   pointer-events: none;
@@ -77,7 +77,7 @@
 .vw-vinyl__label__default-text {
   max-width: 100%;
   overflow: hidden;
-  color: #50371f;
+  color: inherit;
   font-size: clamp(0.38rem, 1.2vw, 0.62rem);
   font-weight: 700;
   line-height: 1.15;
@@ -91,107 +91,44 @@
   font-weight: 500;
 }
 
-.vw-vinyl__groove {
+.vw-vinyl__label::after {
+  content: '';
   position: absolute;
-  inset: 15%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  top: 50%;
+  left: 50%;
+  width: 5%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f6edd6, #6a6152 78%);
+}
+
+.vw-turntable__body::after {
+  content: '';
+  position: absolute;
+  inset: 2%;
+  border-radius: 50%;
+  background: conic-gradient(from -22deg, transparent 5%, #e4e8ef36 16%, transparent 29%,
+    transparent 47%, #e4e8ef26 58%, transparent 69%, #aeb5bd20 80%, transparent 91%);
+  mask-image: radial-gradient(circle, transparent 0 33%, #000 36% 96%, transparent 99%);
   pointer-events: none;
-  z-index: 3;
+  z-index: 12;
 }
 
 .vw-tonearm {
   position: absolute;
-  top: 10%;
-  left: 88.5%;
-  width: 11%;
-  height: 58%;
-  transform-origin: 50% 0;
-  transition: transform 420ms ease-out;
-  filter: drop-shadow(2px 4px 3px #0009);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(1px 3px 3px #000b);
   z-index: 15;
   pointer-events: none;
 }
 
-.vw-tonearm__assembly {
-  position: absolute;
-  inset: 0;
-}
-
-.vw-tonearm__assembly::before {
-  content: '';
-  position: absolute;
-  left: 24%;
-  top: -25%;
-  width: 52%;
-  height: 22%;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #343638, #c9c9c3 25%, #f6f3e9 52%, #777b7d 80%, #343638);
-}
-
-.vw-tonearm__pivot {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100%;
-  aspect-ratio: 1;
-  border: 1px solid #777571;
-  border-radius: 50%;
-  background: radial-gradient(circle, #dddcd3 0 25%, #71706c 27% 33%, #c3c1b9 35% 50%, #252626 52% 74%, #41403d 76%);
-  transform: translate(-50%, -50%);
-  z-index: 1;
-}
-
-.vw-tonearm__tube {
-  position: absolute;
-  top: 5%;
-  bottom: 15%;
-  left: 45%;
-  width: 13%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #545554, #e5e4dc 48%, #a4a8a7);
-  transform: skewX(5deg);
-}
-
-.vw-tonearm__tube::after {
-  content: '';
-  position: absolute;
-  inset: 70% -132% -8% auto;
-  width: 180%;
-  border-right: clamp(2px, 0.38vw, 5px) solid #d2d0c8;
-  border-radius: 0 25% 80% 0 / 0 44% 65% 0;
-  background: #212321;
-}
-
-.vw-tonearm__head {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 60%;
-  height: 22%;
-  border: 1px solid #6c6f69;
-  border-radius: 2px;
-  background: linear-gradient(110deg, #313431, #0d0f0e 72%);
-  transform: translateX(-50%) rotate(7deg);
-  transform-origin: 50% 100%;
-}
-
-.vw-tonearm__head::before {
-  content: '';
-  position: absolute;
-  inset: 12% 22% 36%;
-  border-radius: 1px;
-  background: repeating-linear-gradient(#d4d3cd 0 2px, #747872 2px 3px);
-}
-
-.vw-tonearm__head::after {
-  content: '';
-  position: absolute;
-  left: 42%;
-  bottom: -14%;
-  width: 16%;
-  height: 17%;
-  background: #d7b783;
+.vw-tonearm__moving {
+  transform-origin: 0 0;
+  transition: transform 420ms ease-out;
 }
 
 .vw-hp-light {
@@ -215,7 +152,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vw-tonearm {
+  .vw-tonearm__moving {
     transition-duration: 0.01ms;
   }
 }
