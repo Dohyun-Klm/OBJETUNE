@@ -61,88 +61,39 @@
   margin: 0;
 }
 
-.vw-music-card__favorite-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: var(--vw-bg-secondary);
-  color: var(--vw-text-secondary);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.vw-music-card:hover .vw-music-card__favorite-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.vw-music-card__favorite-btn:hover {
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
-  transform: scale(1.1);
-}
-
-.vw-music-card__favorite-btn--active {
-  opacity: 1;
-  pointer-events: auto;
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
-}
-
-.vw-music-card__play-btn,
-.vw-music-card__queue-btn {
-  position: absolute;
-  top: 0.5rem;
-  background: transparent;
-  border: none;
-  color: var(--vw-text-secondary);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.vw-music-card:hover .vw-music-card__play-btn,
-.vw-music-card:hover .vw-music-card__queue-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.vw-music-card__play-btn:hover,
-.vw-music-card__queue-btn:hover {
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
-  transform: scale(1.1);
-}
-
-.vw-music-card__play-btn {
-  width: 24px;
-  height: 24px;
-}
-
-.vw-music-card__queue-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-}
-
 .vw-music-card__actions {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.375rem;
   margin-top: 0.5rem;
+}
+
+.vw-music-card__actions > button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--vw-silver);
+  border-radius: 6px;
+  background: var(--vw-bg-secondary);
+  color: var(--vw-text-primary);
+  cursor: pointer;
+}
+
+.vw-music-card__actions > .vw-music-card__play-btn,
+.vw-music-card__actions > [aria-pressed='true'] {
+  color: var(--vw-amber-primary);
+}
+
+.vw-music-card__actions > button:hover {
+  border-color: var(--vw-amber-primary);
+  color: var(--vw-amber-primary);
+}
+
+.vw-music-card__actions > button:focus-visible {
+  outline: 2px solid var(--vw-amber-primary);
+  outline-offset: 2px;
 }
 
 .vw-music-card--playlist .vw-music-card__image {

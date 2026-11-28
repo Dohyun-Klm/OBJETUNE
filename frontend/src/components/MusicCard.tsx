@@ -12,24 +12,22 @@ interface MusicCardProps {
 }
 
 // SVG 아이콘 컴포넌트
-const Icon: React.FC<{ name: string; className?: string; size?: number; fill?: boolean; isFavorite?: boolean }> = ({ name, className = '', size = 14, fill = false, isFavorite = false }) => {
+const Icon: React.FC<{ name: string; className?: string; size?: number; isFavorite?: boolean }> = ({ name, className = '', size = 14, isFavorite = false }) => {
   const icons: Record<string, React.ReactNode> = {
     favorite: (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={fill ? 0 : 2} stroke="currentColor">
-        <path d="M12 21s-5-4-5-11a5 5 0 0 1 10 0c0 7-5 11-5 11z" />
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} stroke="currentColor">
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
       </svg>
     ),
     play: (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 6v12l8-6-8-6z" strokeLinecap="round" />
+        <path d="m8 5 12 7-12 7Z" fill="currentColor" strokeLinejoin="round" />
       </svg>
     ),
     add: (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth={2} stroke="currentColor">
-        <circle cx="12" cy="12" r="10" />
         <line x1="12" y1="7" x2="12" y2="17" />
-        <line x1="7" y1="12" x2="17" y2="12" />
+        <line x1="3" y1="12" x2="21" y2="12" />
       </svg>
     ),
   };
@@ -86,14 +84,6 @@ export const MusicCard: React.FC<MusicCardProps> = ({
         style={{ backgroundImage: track.thumbnail && !track.thumbnail.startsWith('🎵') ? `url("${track.thumbnail}")` : undefined }}
       />
       <div className="vw-music-card__info">
-        <button
-          className={`vw-music-card__favorite-btn ${track.isFavorite ? 'vw-music-card__favorite-btn--active' : ''}`}
-          onClick={handleFavorite}
-          aria-label={track.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          title={track.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <Icon name="favorite" size={14} fill={true} isFavorite={track.isFavorite} />
-        </button>
         <h3 className="vw-music-card__title">{track.title}</h3>
         <p className="vw-music-card__artist">{track.artist}</p>
         <p className="vw-music-card__album">{track.album}</p>
@@ -113,6 +103,17 @@ export const MusicCard: React.FC<MusicCardProps> = ({
               title="Add to queue"
             >
               <Icon name="add" size={14} />
+            </button>
+          )}
+          {onFavoriteToggle && (
+            <button
+              className="vw-music-card__favorite-btn"
+              onClick={handleFavorite}
+              aria-label="즐겨찾기"
+              aria-pressed={track.isFavorite}
+              title={track.isFavorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+            >
+              <Icon name="favorite" size={14} isFavorite={track.isFavorite} />
             </button>
           )}
         </div>
