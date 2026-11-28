@@ -35,6 +35,7 @@ type PlaylistResponse = {
 };
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8080';
+const YOUTUBE_API_BASE_URL = process.env.REACT_APP_YOUTUBE_API_BASE_URL || API_BASE_URL;
 
 // Tauri API 사용 가능 여부 캐시 (테스트용으로 리셋 가능)
 // 테스트 환경에서는 null로 초기화하여 캐시를 사용하지 않도록 함
@@ -975,7 +976,7 @@ export async function searchYouTubeTracks(query: string, limit?: number): Promis
   }
   
   const response = await fetch(
-    `${API_BASE_URL}/api/v1/youtube/search?q=${encodeURIComponent(query)}&limit=${limit || 10}`
+    `${YOUTUBE_API_BASE_URL}/api/v1/youtube/search?q=${encodeURIComponent(query)}&limit=${limit || 10}`
   );
   if (!response.ok) {
     const error = await response.json().catch(() => null);
