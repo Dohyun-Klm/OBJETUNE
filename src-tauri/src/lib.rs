@@ -1083,7 +1083,7 @@ async fn move_queue_item(track_id: String, new_position: i64) -> Result<bool, Er
 
 // Database 이니셜라이저
 #[tauri::command]
-async fn init_db() -> Result<String, ErrorResponse> {
+fn init_db() -> Result<String, ErrorResponse> {
     use std::env;
     use std::fs;
     
@@ -1098,7 +1098,9 @@ async fn init_db() -> Result<String, ErrorResponse> {
     };
     
     if let Some(parent) = std::path::Path::new(&db_path).parent() {
-        let _ = fs::create_dir_all(parent);
+        fs::create_dir_all(parent).map_err(|e| ErrorResponse {
+            message: format!("Failed to create database directory: {}", e),
+        })?;
     }
     
     init_database(&db_path).map_err(|e| ErrorResponse { 
@@ -1496,10 +1498,6 @@ async fn set_minimize_to_tray(enabled: bool) -> Result<bool, ErrorResponse> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let _ = std::panic::catch_unwind(|| {
-        let _ = init_db();
-    });
-
     let api_server_child = Arc::new(Mutex::new(None::<Child>));
     let api_server_for_setup = Arc::clone(&api_server_child);
     
@@ -1518,6 +1516,8 @@ pub fn run() {
             None,  // --minimized 플래그 제거: 앱 시작 시 창이 보이도록
         ))
         .setup(move |app| {
+            init_db().map_err(|error| std::io::Error::other(error.message))?;
+
             if let Some(child) = launch_api_server(app.handle()) {
                 *api_server_for_setup.lock().unwrap() = Some(child);
             }
