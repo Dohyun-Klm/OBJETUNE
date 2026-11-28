@@ -19,6 +19,25 @@ pub struct SearchQuery {
     /// 결과 개수 (최대 50개)
     #[serde(default = "default_limit")]
     pub limit: u32,
+    #[serde(default)]
+    pub mode: SearchMode,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SearchMode {
+    #[default]
+    Music,
+    All,
+}
+
+impl SearchMode {
+    fn category(self) -> Option<&'static str> {
+        match self {
+            Self::Music => Some("10"),
+            Self::All => None,
+        }
+    }
 }
 
 fn default_limit() -> u32 { 10 }
@@ -86,15 +105,20 @@ impl YouTubeApiClient {
     }
 
     /// 영상 검색
-    async fn search_videos(&self, query: &str, limit: u32) -> Result<Vec<YouTubeVideo>, String> {
-        let params = [
+    async fn search_videos(&self, query: &str, limit: u32, mode: SearchMode) -> Result<Vec<YouTubeVideo>, String> {
+        let limit = limit.to_string();
+        let mut params = vec![
             ("part", "snippet"),
             ("q", query),
             ("type", "video"),
-            ("maxResults", &limit.to_string()),
+            ("maxResults", &limit),
             ("order", "relevance"),
+            ("videoEmbeddable", "true"),
             ("key", &self.api_key),
         ];
+        if let Some(category) = mode.category() {
+            params.push(("videoCategoryId", category));
+        }
 
         let url = format!("{}/search", self.base_url);
         
@@ -107,7 +131,7 @@ impl YouTubeApiClient {
                 if e.is_timeout() {
                     "YouTube API 요청 시간 초과".to_string()
                 } else {
-                    format!("API 요청 실패: {}", e)
+                    "YouTube API 요청에 실패했습니다".to_string()
                 }
             })?;
 
@@ -124,22 +148,26 @@ impl YouTubeApiClient {
             .map(|a| a.to_vec())
             .unwrap_or_default();
 
-        let mut videos = Vec::new();
-        for item in items {
-            if let Some(id) = item.get("id").and_then(|i| i.get("videoId")).and_then(|v| v.as_str()) {
-                let video = self.get_video_details(id).await?;
-                videos.push(video);
-            }
+        let ids: Vec<_> = items.iter()
+            .filter_map(|item| item.pointer("/id/videoId").and_then(|id| id.as_str()))
+            .collect();
+        if ids.is_empty() {
+            return Ok(Vec::new());
         }
-
-        Ok(videos)
+        let details = self.get_video_batch(&ids.join(",")).await?;
+        Ok(order_video_details(&ids, details))
     }
 
     /// 영상 상세 정보 조회
     async fn get_video_details(&self, video_id: &str) -> Result<YouTubeVideo, String> {
+        self.get_video_batch(video_id).await?.into_iter().next()
+            .ok_or_else(|| "영상 정보를 찾을 수 없습니다".to_string())
+    }
+
+    async fn get_video_batch(&self, video_ids: &str) -> Result<Vec<YouTubeVideo>, String> {
         let params = [
             ("part", "snippet,contentDetails,statistics"),
-            ("id", video_id),
+            ("id", video_ids),
             ("key", &self.api_key),
         ];
 
@@ -154,7 +182,7 @@ impl YouTubeApiClient {
                 if e.is_timeout() {
                     "영상 상세 정보 요청 시간 초과".to_string()
                 } else {
-                    format!("API 요청 실패: {}", e)
+                    "YouTube 영상 상세 정보 요청에 실패했습니다".to_string()
                 }
             })?;
 
@@ -166,9 +194,12 @@ impl YouTubeApiClient {
         }
 
         let json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
-        let items = json.get("items").and_then(|i| i.as_array()).and_then(|a| a.first());
+        Ok(json.get("items").and_then(|items| items.as_array()).into_iter().flatten()
+            .filter_map(Self::parse_video).collect())
+    }
 
-        let item = items.ok_or("영상 정보를 찾을 수 없습니다")?;
+    fn parse_video(item: &serde_json::Value) -> Option<YouTubeVideo> {
+        let video_id = item.get("id")?.as_str()?;
 
         let snippet = item.get("snippet").and_then(|s| s.as_object());
         let content_details = item.get("contentDetails").and_then(|c| c.as_object());
@@ -206,7 +237,7 @@ impl YouTubeApiClient {
             .and_then(|s| s.get("viewCount").and_then(|v| v.as_str()))
             .and_then(|v| v.parse::<u64>().ok());
 
-        Ok(YouTubeVideo {
+        Some(YouTubeVideo {
             video_id: video_id.to_string(),
             title,
             channel_title,
@@ -217,6 +248,12 @@ impl YouTubeApiClient {
             view_count,
         })
     }
+}
+
+fn order_video_details(ids: &[&str], details: Vec<YouTubeVideo>) -> Vec<YouTubeVideo> {
+    let mut by_id: std::collections::HashMap<_, _> =
+        details.into_iter().map(|video| (video.video_id.clone(), video)).collect();
+    ids.iter().filter_map(|id| by_id.remove(*id)).collect()
 }
 
 /// YouTube 영상 검색 API
@@ -235,7 +272,8 @@ pub async fn search(
         ));
     }
 
-    if params.q.len() > 100 {
+    let query = params.q.trim();
+    if query.chars().count() > 100 {
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
@@ -246,9 +284,10 @@ pub async fn search(
     }
 
     let limit = params.limit.min(50).max(1);
+    let cache_key = format!("{:?}:{query}", params.mode);
 
     // 캐시 확인
-    if let Some(cached) = state.cache.get(&params.q, limit) {
+    if let Some(cached) = state.cache.get(&cache_key, limit) {
         tracing::debug!("검색 결과 캐시 히트: {}", params.q);
         return Ok(Json(cached));
     }
@@ -265,12 +304,12 @@ pub async fn search(
 
     let client = YouTubeApiClient::new(api_key);
     
-    match client.search_videos(&params.q, limit).await {
+    match client.search_videos(query, limit, params.mode).await {
         Ok(videos) => {
             let total = videos.len();
             
             // 캐시에 저장
-            state.cache.set(&params.q, limit, YouTubeSearchResult {
+            state.cache.set(&cache_key, limit, YouTubeSearchResult {
                 results: videos.clone(),
                 total_results: total,
             });
@@ -372,7 +411,26 @@ pub async fn get_video(
 
 #[cfg(test)]
 mod tests {
-    use super::parse_iso_duration;
+    use super::{order_video_details, parse_iso_duration, SearchMode, SearchQuery, YouTubeApiClient};
+
+    #[test]
+    fn defaults_to_music_and_allows_unfiltered_category() {
+        let music: SearchQuery = serde_json::from_str(r#"{"q":"창모"}"#).unwrap();
+        let all: SearchQuery = serde_json::from_str(r#"{"q":"창모","mode":"all"}"#).unwrap();
+        assert_eq!(music.mode.category(), Some("10"));
+        assert_eq!(all.mode.category(), None);
+        assert!(serde_json::from_str::<SearchMode>(r#""unknown""#).is_err());
+    }
+
+    #[test]
+    fn batch_details_preserve_search_order_and_skip_missing_videos() {
+        let details = ["second", "first"].into_iter().map(|id| {
+            YouTubeApiClient::parse_video(&serde_json::json!({ "id": id })).unwrap()
+        }).collect();
+        let ordered = order_video_details(&["first", "missing", "second"], details);
+        assert_eq!(ordered.iter().map(|video| video.video_id.as_str()).collect::<Vec<_>>(),
+            ["first", "second"]);
+    }
 
     #[test]
     fn parses_youtube_iso_durations() {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { setMockData } from './services/tauriApi';
+import * as tauriApi from './services/tauriApi';
 import { mockTracks, mockPlaylists } from './setupTests';
 
 // IMPORTANT: Import App AFTER all jest.mock calls
@@ -64,6 +65,26 @@ describe('App', () => {
     expect(platform).toBeChecked();
     expect(screen.getByPlaceholderText('SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add SoundCloud track' })).toBeInTheDocument();
+  });
+
+  it('sends YouTube searches only on submit, with Music as the default', async () => {
+    const search = jest.spyOn(tauriApi, 'searchYouTubeTracks').mockResolvedValue([]);
+    try {
+      await act(async () => { render(<App />); });
+      const input = screen.getByLabelText('Search music');
+      const mode = screen.getByLabelText('YouTube 검색 범위');
+      expect(mode).toHaveValue('music');
+      fireEvent.change(input, { target: { value: '창모' } });
+      expect(search).not.toHaveBeenCalled();
+      fireEvent.submit(input.closest('form')!);
+      await waitFor(() => expect(search).toHaveBeenCalledWith('창모', 10, 'music'));
+      fireEvent.change(mode, { target: { value: 'all' } });
+      expect(search).toHaveBeenCalledTimes(1);
+      fireEvent.submit(input.closest('form')!);
+      await waitFor(() => expect(search).toHaveBeenLastCalledWith('창모', 10, 'all'));
+    } finally {
+      search.mockRestore();
+    }
   });
 
   it('removes the old sidebar navigation', async () => {

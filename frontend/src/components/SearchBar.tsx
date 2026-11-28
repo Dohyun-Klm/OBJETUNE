@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './SearchBar.css';
 import { PlatformFilter } from '../types';
 import { validateSoundCloudUrl } from '../services/platformAdapter';
+import type { YouTubeSearchMode } from '../services/tauriApi';
 
 interface SearchBarProps {
   value: string;
@@ -11,6 +12,8 @@ interface SearchBarProps {
   placeholder?: string;
   className?: string;
   onYouTubeSearch?: (query: string) => void;
+  youtubeMode: YouTubeSearchMode;
+  onYouTubeModeChange: (mode: YouTubeSearchMode) => void;
   onSoundCloudUrlSubmit?: (url: string) => Promise<void>;
 }
 
@@ -22,6 +25,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = '검색...',
   className = '',
   onYouTubeSearch,
+  youtubeMode,
+  onYouTubeModeChange,
   onSoundCloudUrlSubmit,
 }) => {
   const [soundcloudUrl, setSoundcloudUrl] = useState('');
@@ -120,21 +125,25 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             )}
           </>
         ) : (
-          <>
+          <form className="vw-search-bar__youtube-form" onSubmit={(event) => {
+            event.preventDefault();
+            if (value.trim()) onYouTubeSearch?.(value.trim());
+          }}>
+            <select className="vw-search-bar__filter" aria-label="YouTube 검색 범위" value={youtubeMode}
+              onChange={(event) => onYouTubeModeChange(event.target.value === 'all' ? 'all' : 'music')}>
+              <option value="music">음악</option>
+              <option value="all">전체 영상</option>
+            </select>
             <input
               type="search"
               className="vw-search-bar__input"
               value={value}
-              onChange={(e) => {
-                onSearch(e.target.value);
-                if (onYouTubeSearch) {
-                  onYouTubeSearch(e.target.value);
-                }
-              }}
+              onChange={(e) => onSearch(e.target.value)}
               placeholder={placeholder}
               aria-label="Search music"
             />
-          </>
+            <button type="submit" className="vw-search-bar__submit" disabled={!value.trim()}>검색</button>
+          </form>
         )}
       </div>
     </div>

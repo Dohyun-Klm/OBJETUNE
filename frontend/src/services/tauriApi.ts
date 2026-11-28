@@ -959,7 +959,9 @@ export async function isMaximized(): Promise<boolean> {
 }
 
 // Search API
-export async function searchYouTubeTracks(query: string, limit?: number): Promise<Track[]> {
+export type YouTubeSearchMode = 'music' | 'all';
+
+export async function searchYouTubeTracks(query: string, limit = 10, mode: YouTubeSearchMode = 'music'): Promise<Track[]> {
   if (!(await checkTauri())) {
     return [];
   }
@@ -972,11 +974,11 @@ export async function searchYouTubeTracks(query: string, limit?: number): Promis
     const lowerQuery = query.toLowerCase();
     return mockTracksData.filter(
       t => t.title.toLowerCase().includes(lowerQuery) || t.artist.toLowerCase().includes(lowerQuery)
-    ).slice(0, limit || 10);
+    ).slice(0, limit);
   }
   
   const response = await fetch(
-    `${YOUTUBE_API_BASE_URL}/api/v1/youtube/search?q=${encodeURIComponent(query)}&limit=${limit || 10}`
+    `${YOUTUBE_API_BASE_URL}/api/v1/youtube/search?${new URLSearchParams({ q: query, limit: String(limit), mode })}`
   );
   if (!response.ok) {
     const error = await response.json().catch(() => null);

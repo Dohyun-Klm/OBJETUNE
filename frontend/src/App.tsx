@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import './styles/vintage-walnut.css';
 import './components/Turntable.css';
@@ -30,6 +30,7 @@ import {
   unregisterMediaShortcuts
 } from './services/tauriApi';
 import { searchYouTubeTracks } from './services/tauriApi';
+import type { YouTubeSearchMode } from './services/tauriApi';
 
 // Tauri API는 동적으로 가져오기 (테스트 환경에서 모킹 가능)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -42,6 +43,9 @@ function App() {
   const [currentMode, setCurrentMode] = useState<AppMode>('shell');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [youtubeMode, setYouTubeMode] = useState<YouTubeSearchMode>('music');
+  const [youtubeResults, setYouTubeResults] = useState<Track[] | null>(null);
+  const youtubeSearchRequest = useRef(0);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('youtube');
 
   // 로딩 및 오류 상태
@@ -141,7 +145,7 @@ function App() {
   }, []);
 
   // 필터링된 트랙 목록
-  const filteredTracks: Track[] = localTracks.filter(track => {
+  const filteredTracks: Track[] = youtubeResults ?? localTracks.filter(track => {
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.album.toLowerCase().includes(searchQuery.toLowerCase());
@@ -294,25 +298,25 @@ function App() {
   // YouTube 실제 검색 핸들러
   const handleYouTubeSearch = async (query: string) => {
     if (!query.trim()) return;
-
+    const request = ++youtubeSearchRequest.current;
+    setError(null);
+    setYouTubeResults([]);
     try {
-      const results = await searchYouTubeTracks(query, 10);
-
-      // 검색 결과를 트랙으로 변환하여 로컬 트랙에 추가하거나 표시
-      for (const result of results) {
-        // 기존 트랙에 존재하는지 확인
-        const exists = localTracks.some(t => t.id === result.id);
-        if (!exists) {
-          setLocalTracks(prev => [...prev, result]);
-        }
-      }
-
+      const results = await searchYouTubeTracks(query, 10, youtubeMode);
+      if (request !== youtubeSearchRequest.current) return;
+      setYouTubeResults(results);
       if (results.length === 0) {
         setError('검색 결과가 없습니다.');
       }
     } catch (err: any) {
-      setError(err.message || '검색 중 오류가 발생했습니다');
+      if (request === youtubeSearchRequest.current) setError(err.message || '검색 중 오류가 발생했습니다');
     }
+  };
+
+  const clearYouTubeResults = () => {
+    youtubeSearchRequest.current += 1;
+    setYouTubeResults(null);
+    setError(null);
   };
 
   const handleSoundCloudUrlSubmit = async (url: string) => {
@@ -460,12 +464,20 @@ function App() {
                 {/* 검색 바 */}
                 <SearchBar
                   value={searchQuery}
-                  onSearch={setSearchQuery}
+                  onSearch={(query) => {
+                    setSearchQuery(query);
+                    clearYouTubeResults();
+                  }}
                   platformFilter={platformFilter}
                   onPlatformFilter={(platform) => {
                     setPlatformFilter(platform);
                     setSearchQuery('');
-                    setError(null);
+                    clearYouTubeResults();
+                  }}
+                  youtubeMode={youtubeMode}
+                  onYouTubeModeChange={(mode) => {
+                    setYouTubeMode(mode);
+                    clearYouTubeResults();
                   }}
                   onYouTubeSearch={handleYouTubeSearch}
                   onSoundCloudUrlSubmit={handleSoundCloudUrlSubmit}
