@@ -104,6 +104,7 @@ export async function createTrack(track: Partial<Track> & Pick<Track, 'platform'
         url: track.url,
         embed_url: track.embedUrl,
         cover_art_url: track.coverArtUrl,
+        album: track.album || null,
       }
     });
 
@@ -127,6 +128,26 @@ export async function createTrack(track: Partial<Track> & Pick<Track, 'platform'
     console.error('Failed to create track:', error);
     return null;
   }
+}
+
+// Helper function to convert Tauri TrackResponse to frontend Track
+function mapTrackResponse(response: any): Track {
+  return {
+    id: response.id,
+    platform: response.platform as any,
+    platformId: response.platform_id,
+    title: response.title,
+    artist: response.artist,
+    album: response.album || '',
+    duration: response.duration,
+    thumbnail: response.thumbnail || '',
+    url: response.url || '',
+    embedUrl: response.embed_url,
+    isPlayable: true,
+    addedAt: new Date(response.added_at * 1000).toISOString(),
+    isFavorite: response.is_favorite,
+    coverArtUrl: response.cover_art_url || undefined,
+  };
 }
 
 export async function getAllTracks(): Promise<Track[]> {

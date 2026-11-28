@@ -38,6 +38,7 @@ impl Track {
         thumbnail: Option<String>,
         url: Option<String>,
         cover_art_url: Option<String>,
+        album: Option<String>,
     ) -> Self {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -52,7 +53,7 @@ impl Track {
             platform_id: platform_id.to_string(),
             title,
             artist,
-            album: None,
+            album,
             duration,
             thumbnail,
             url,
@@ -268,6 +269,7 @@ mod tests {
             "Test Artist".to_string(),
             "https://www.youtube.com/embed/dQw4w9WgXcQ".to_string(),
             180,
+            None,
             None,
             None,
             None,

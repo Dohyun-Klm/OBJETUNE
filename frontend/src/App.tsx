@@ -22,10 +22,11 @@ import {
   CurrentView,
   PlatformSearchResult
 } from './types';
-import { 
+import {
   loadYouTubeAPI, 
   loadSoundCloudAPI
 } from './services/platformAdapter';
+import { setMode as setTauriMode } from './services/tauriApi';
 import { playerManager } from './services/playerManager';
 import {
   createTrack,
@@ -325,6 +326,25 @@ function App() {
     };
   }, []);
   /* eslint-enable react-hooks/exhaustive-deps */
+
+  // Tauri 모드 변경 이벤트 리스너
+  useEffect(() => {
+    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;
+
+    const handleModeChange = (_event: any, mode: string) => {
+      if (mode === 'library' || mode === 'turntable') {
+        setCurrentMode(mode);
+      }
+    };
+
+    if (tauriWindow && typeof tauriWindow.on === 'function') {
+      tauriWindow.on('mode_change', handleModeChange);
+    }
+
+    return () => {
+      // 이벤트 구독 해제는 자동으로 처리됨
+    };
+  }, []);
 
   // 트랙 재생 핸들러
   const handlePlay = async (track: Track) => {
@@ -630,6 +650,20 @@ function App() {
     setNowPlaying(prev => ({ ...prev, repeat: newRepeat }));
   };
 
+  // 턴테이블 모드 핸들러
+  const handleModeChange = async (mode: 'library' | 'turntable') => {
+    try {
+      const success = await setTauriMode(mode);
+      if (success) {
+        setCurrentMode(mode);
+      } else {
+        console.error('Failed to change mode:', mode);
+      }
+    } catch (err) {
+      console.error('Error changing mode:', err);
+    }
+  };
+
   // 컴포넌트 언마운트 시 플레이어 정리
   useEffect(() => {
     return () => {
@@ -644,7 +678,7 @@ function App() {
         currentView={currentView} 
         onViewChange={setCurrentView}
         currentMode={currentMode}
-        onModeChange={(mode) => setCurrentMode(mode)}
+        onModeChange={handleModeChange}
         queueLength={queue.length}
       />
       

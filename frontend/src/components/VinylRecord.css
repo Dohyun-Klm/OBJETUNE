@@ -1,2 +1,214 @@
 /* VinylRecord Component Styles */
-/* Vintage Walnut theme colors are inherited from vintage-walnut.css */
+
+.vw-vinyl {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: 
+    radial-gradient(ellipse at center, #2a1a0f 0%, #1d1107 70%, #0f0a03 100%),
+    conic-gradient(from 0deg at center, #5a4736 0deg 180deg, #4a3a2a 180deg 360deg);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.6),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vw-vinyl::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  background: 
+    radial-gradient(circle, 
+      rgba(255, 255, 255, 0.05) 0%, 
+      rgba(255, 255, 255, 0) 30%, 
+      rgba(0, 0, 0, 0) 70%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.vw-vinyl:hover {
+  transform: scale(1.03);
+}
+
+/* LP 라벨 - 중앙 원형 영역 */
+.vw-vinyl__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: 
+    radial-gradient(circle, 
+      #c9a86a 0%, 
+      #b8945a 40%, 
+      #a6824e 100%);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 
+    inset 0 0 10px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.4);
+  border-bottom-color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* 아트워크가 있는 경우 라벨 */
+.vw-vinyl__label--artwork {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #000;
+}
+
+.vw-vinyl__label__artwork-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+/* 기본 라벨 디자인 */
+.vw-vinyl__label__default {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #8b7355;
+  font-family: 'Arial', sans-serif;
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.vw-vinyl__label__default-text {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #c9a86a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 레코드 스크류 (곡선상의 작은 흠집 표시) */
+.vw-vinyl::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50% 50% 0 0;
+  background: 
+    radial-gradient(ellipse at center, 
+      rgba(139, 115, 85, 0.3) 0%, 
+      rgba(139, 115, 85, 0.1) 50%, 
+      transparent 70%);
+  transform: translate(-50%, -50%) rotate(0.5deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 레코드의 격자 무늬 (LP 질감) */
+.vw-vinyl__groove {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: 
+    conic-gradient(
+      from 0deg at center,
+      transparent 0deg 179deg,
+      rgba(100, 85, 60, 0.3) 179deg 181deg,
+      transparent 181deg 360deg
+    );
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* 톤암 */
+.vw-tonearm {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 50px;
+  height: 120px;
+  background: 
+    linear-gradient(90deg, 
+      #3a3a3a 0%, 
+      #5a5a5a 30%, 
+      #3a3a3a 100%);
+  border-radius: 3px;
+  transform-origin: center left;
+  transform: rotate(25deg);
+  z-index: 15;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.vw-tonearm__pivot {
+  position: absolute;
+  bottom: -10px;
+  left: 5px;
+  width: 12px;
+  height: 12px;
+  background: #2a2a2a;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.vw-tonearm__head {
+  position: absolute;
+  top: 5px;
+  right: -8px;
+  width: 20px;
+  height: 12px;
+  background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* HP (Hunting Lamp) 조명 효과 */
+.vw-hp-light {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #ffd700 0%, #ffa500 70%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 12px 4px rgba(255, 165, 0, 0.4);
+  z-index: 14;
+  pointer-events: none;
+}
+
+/* 재생 중일 때 LP 스핀 효과 */
+.vw-vinyl[data-playing="true"] {
+  animation-play-state: running;
+}
+
+.vw-vinyl[data-playing="false"] {
+  animation-play-state: paused;
+}

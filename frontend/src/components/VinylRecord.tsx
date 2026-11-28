@@ -81,6 +81,7 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
       }}
       role="img"
       aria-label={track ? `${track.title} by ${track.artist}` : 'Turntable'}
+      data-playing={isPlaying ? 'true' : 'false'}
       data-testid="vinyl-record"
     >
       {/* LP 라벨 */}
@@ -100,6 +101,9 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
           </div>
         )}
       </div>
+      
+      {/* 레코드 스크류 (LP 질감 표현) */}
+      <div className="vw-vinyl__groove" />
     </div>
   );
 };

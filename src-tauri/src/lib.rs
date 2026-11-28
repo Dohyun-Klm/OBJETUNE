@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::io::{self, BufRead};
+use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use tauri::{Manager};
 use tauri_plugin_autostart::ManagerExt;
 
@@ -99,6 +101,7 @@ pub struct CreateTrackRequest {
     pub url: Option<String>,
     pub embed_url: String,
     pub cover_art_url: Option<String>,
+    pub album: Option<String>,
 }
 
 // Create Playlist 요청
@@ -141,19 +144,50 @@ fn get_app_info() -> AppInfo {
     }
 }
 
+// 현재 앱 모드 상태 (library 또는 turntable)
+static APP_MODE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("library".to_string()));
+
 #[tauri::command]
 fn get_current_mode() -> String {
-    "library".to_string()
+    APP_MODE.lock().unwrap().clone()
 }
 
 #[tauri::command]
 fn enter_library_mode() -> Result<String, String> {
+    let mut mode = APP_MODE.lock().unwrap();
+    *mode = "library".to_string();
+    drop(mode);
+    // Frontend에 모드 변경 이벤트 발송
+    if let Ok(app) = tauri::api::app_handle() {
+        let _ = app.emit("mode_change", "library");
+    }
     Ok("Library mode activated".to_string())
 }
 
 #[tauri::command]
 fn enter_turntable_mode() -> Result<String, String> {
-    Err("Turntable Mode is not yet implemented".to_string())
+    let mut mode = APP_MODE.lock().unwrap();
+    *mode = "turntable".to_string();
+    drop(mode);
+    // Frontend에 모드 변경 이벤트 발송
+    if let Ok(app) = tauri::api::app_handle() {
+        let _ = app.emit("mode_change", "turntable");
+    }
+    Ok("Turntable mode activated".to_string())
+}
+
+#[tauri::command]
+fn set_mode(mode: String) -> Result<bool, String> {
+    if mode != "library" && mode != "turntable" {
+        return Err("Invalid mode".to_string());
+    }
+    let mut app_mode = APP_MODE.lock().unwrap();
+    *app_mode = mode.clone();
+    drop(app_mode);
+    if let Ok(app) = tauri::api::app_handle() {
+        let _ = app.emit("mode_change", mode);
+    }
+    Ok(true)
 }
 
 // ============================================
@@ -180,6 +214,7 @@ async fn create_track(req: CreateTrackRequest) -> Result<TrackResponse, ErrorRes
         req.thumbnail,
         req.url,
         req.cover_art_url,
+        req.album.clone(),
     );
     
     conn.execute(
@@ -1409,13 +1444,15 @@ async fn fetch_youtube_results(client: &reqwest::Client, url: &str) -> Result<Ve
                     platform_id: video_id.to_string(),
                     title: snippet.get("title").and_then(|t| t.as_str()).unwrap_or("Unknown").to_string(),
                     artist: snippet.get("channelTitle").and_then(|c| c.as_str()).unwrap_or("Unknown").to_string(),
-                    album: None,
+                    // YouTube API에서는 앨범 정보를 별도로 요청하거나, 썸네일을 앨범 아트로 사용
+                    album: snippet.get("description").and_then(|d| d.as_str()).map(|s| s.chars().take(100).collect()),
                     duration: 0,
                     thumbnail: snippet.get("thumbnails").and_then(|t| t.get("medium"))
                         .and_then(|m| m.get("url")).map(|u| u.as_str().unwrap_or("").to_string()),
                     url: Some(format!("https://youtube.com/watch?v={}", video_id)),
                     embed_url: format!("https://www.youtube.com/embed/{}", video_id),
-                    cover_art_url: None,
+                    cover_art_url: snippet.get("thumbnails").and_then(|t| t.get("high"))
+                        .and_then(|h| h.get("url")).map(|u| u.as_str().unwrap_or("").to_string()),
                     added_at: 0,
                     is_favorite: false,
                 };
@@ -1677,6 +1714,7 @@ pub fn run() {
             init_db,
             get_app_info,
             get_current_mode,
+            set_mode,
             enter_library_mode,
             enter_turntable_mode,
             create_track,
