@@ -14,12 +14,6 @@ interface SearchBarProps {
   onSoundCloudUrlSubmit?: (url: string) => Promise<void>;
 }
 
-// 현재 지원하는 플랫폼 (Spotify, Bandcamp 비활성화 - API 미연동)
-const platforms = [
-  { id: 'youtube', label: 'YouTube' },
-  { id: 'soundcloud', label: 'SoundCloud' },
-];
-
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onSearch,
@@ -75,20 +69,21 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  const getCurrentPlatform = () => {
-    return platforms.find(p => p.id === platformFilter) || platforms[0];
-  };
-
   return (
     <div className={`vw-search-bar ${className}`} role="search">
       {/* Platform toggle button - left side */}
       <button
-        className="vw-search-bar__platform-btn"
+        type="button"
+        className="vw-search-bar__platform-switch"
+        role="switch"
+        aria-checked={platformFilter === 'soundcloud'}
         onClick={handlePlatformToggle}
-        aria-label={`Switch to ${platformFilter === 'youtube' ? 'SoundCloud' : 'YouTube'}`}
-        title={`${getCurrentPlatform().label} 모드`}
+        aria-label="SoundCloud 모드"
+        title="YouTube / SoundCloud 전환"
       >
-        {getCurrentPlatform().label}
+        <span aria-hidden="true">YouTube</span>
+        <span className="vw-search-bar__lever" aria-hidden="true" />
+        <span aria-hidden="true">SoundCloud</span>
       </button>
       
       {/* Search input area - right side */}
@@ -105,7 +100,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                   setSoundcloudUrl(e.target.value);
                   setUrlError(null);
                 }}
-                placeholder="SoundCloud 트랙 URL"
+                placeholder="SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다."
                 aria-label="SoundCloud track URL"
                 disabled={submitting}
               />
@@ -123,9 +118,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 {urlError}
               </div>
             )}
-            <div className="vw-search-bar__note">
-              SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다.
-            </div>
           </>
         ) : (
           <>

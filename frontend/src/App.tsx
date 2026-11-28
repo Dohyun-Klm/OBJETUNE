@@ -3,23 +3,19 @@ import './App.css';
 import './styles/vintage-walnut.css';
 import './components/Turntable.css';
 import './components/VinylRecord.css';
-import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
 import { MusicCard } from './components/MusicCard';
 import { MiniPlayer } from './components/MiniPlayer';
-import { QueuePanel } from './components/QueuePanel';
 import { EmptyState } from './components/EmptyState';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
 import { 
   Track, 
-  Playlist, 
   AppMode, 
   PlatformFilter, 
   TurntableSettings, 
   PlaybackState,
   NowPlaying,
-  CurrentView,
 } from './types';
 import {
   loadYouTubeAPI, 
@@ -29,28 +25,9 @@ import { setMode as setTauriMode } from './services/tauriApi';
 import { playerManager } from './services/playerManager';
 import {
   createTrack,
-  getPlaylists,
   getAllTracks,
-  getFavorites,
-  getHistory,
-  addFavorite,
-  removeFavorite,
-  addToHistory,
-  addToQueue,
-  getQueue,
   setSetting,
   checkTauri,
-  getWindowSize,
-  setWindowSize,
-  getWindowPosition,
-  setWindowPosition,
-  getAlwaysOnTop,
-  setAlwaysOnTop,
-  isMaximized,
-  getShuffle,
-  setShuffle,
-  getRepeat,
-  setRepeat,
   getCurrentMode,
   registerMediaShortcuts,
   unregisterMediaShortcuts
@@ -67,8 +44,6 @@ function App() {
   // 앱 상태
   const [currentMode, setCurrentMode] = useState<AppMode>('shell');
   
-  // 라이브러리 뷰 상태
-  const [currentView, setCurrentView] = useState<CurrentView>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('youtube');
   
@@ -103,11 +78,7 @@ function App() {
 
   // 로컬 트랙 및 플레이리스트
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
-  const [localPlaylists, setLocalPlaylists] = useState<Playlist[]>([]);
   
-  // API 데이터: 즐겨찾기 및 최근 재생 기록
-  const [favoritesData, setFavoritesData] = useState<Track[]>([]);
-  const [historyData, setHistoryData] = useState<Track[]>([]);
 
   // 턴테이블 설정
   const [turntableSettings, setTurntableSettings] = useState<TurntableSettings>({
@@ -116,7 +87,6 @@ function App() {
 
   // 큐 패널 상태
   const [queuePanelOpen, setQueuePanelOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [queue, setQueue] = useState<Track[]>([]);
 
   // Tauri API 확인 및 초기 데이터 로드
@@ -128,30 +98,11 @@ function App() {
           const mode = await getCurrentMode();
           setCurrentMode(mode);
           
-          // 로컬 데이터 로드 (트랙, 플레이리스트, 즐겨찾기, 히스토리 동시 로드)
-          const [tracks, playlists, favorites, history] = await Promise.all([
-            getAllTracks(),
-            getPlaylists(),
-            getFavorites(),
-            getHistory(100)
-          ]);
-          
-          setLocalTracks(tracks.length > 0 ? tracks : []);
-          setLocalPlaylists(playlists.length > 0 ? playlists : []);
-          setFavoritesData(favorites);
-          setHistoryData(history);
-          
-          // 재생 설정 로드 (셔플/반복)
-          const [shuffle, repeat] = await Promise.all([
-            getShuffle(),
-            getRepeat()
-          ]);
-          setNowPlaying(prev => ({ ...prev, shuffle, repeat }));
+          setLocalTracks(await getAllTracks());
         } else {
           // 개발 모드: 빈 상태
           setCurrentMode('shell');
           setLocalTracks([]);
-          setLocalPlaylists([]);
         }
       } catch (err) {
         console.error('Failed to load app data:', err);
@@ -159,7 +110,6 @@ function App() {
         // 오류 시 빈 상태 사용
         setCurrentMode('shell');
         setLocalTracks([]);
-        setLocalPlaylists([]);
       }
     };
     loadAppData();
@@ -201,46 +151,6 @@ function App() {
     return matchesSearch;
   });
 
-  // 현재 뷰에 맞는 트랙/플레이리스트
-  const getDisplayItems = (): (Track | Playlist)[] => {
-    switch (currentView) {
-      case 'playlists':
-        return localPlaylists;
-      case 'favorites':
-        // API 데이터 사용: getFavorites()로 가져온 즐겨찾기 목록
-        if (favoritesData.length > 0) {
-          return favoritesData.map(favTrack => {
-            // 로컬 트랙의 추가 정보 보완 (플랫폼 필터, 검색 결과 등)
-            const localTrack = localTracks.find(t => t.id === favTrack.id);
-            return localTrack ? { ...favTrack, ...localTrack } : favTrack;
-          });
-        }
-        return localTracks.filter(t => t.isFavorite);
-      case 'recently-played':
-        // API 데이터 사용: getHistory()로 가져온 재생 기록
-        if (historyData.length > 0) {
-          // 히스토리에서 중복 제거 (최신순으로 정렬)
-          const uniqueTracks: Track[] = [];
-          const seenIds = new Set<string>();
-          for (const track of historyData) {
-            if (!seenIds.has(track.id)) {
-              seenIds.add(track.id);
-              uniqueTracks.push(track);
-            }
-          }
-          return uniqueTracks;
-        }
-        // 히스토리가 없으면 로컬 트랙의 addedAt 기준 정렬
-        return [...localTracks].sort((a, b) => 
-          new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
-        );
-      default:
-        return filteredTracks;
-    }
-  };
-
-  const displayItems = getDisplayItems();
-  const isPlaylistView = currentView === 'playlists';
   const isTurntableMode = currentMode === 'turntable';
   const turntableTrack = nowPlaying.track;
   const [tonearmPosition, setTonearmPosition] = useState<{ track: Track; progress: number } | null>(null);
@@ -301,6 +211,7 @@ function App() {
 
     const endSub = playerManager.on('end', (event) => {
       setTurntablePlaybackState('stopped');
+      setNowPlaying(prev => ({ ...prev, isPlaying: false }));
     });
     if (endSub && typeof endSub.unsubscribe === 'function') {
       subscriptions.push(endSub.unsubscribe);
@@ -310,6 +221,7 @@ function App() {
       const errMsg = (event as any)?.message || '재생 오류가 발생했습니다';
       setError(errMsg);
       setTurntablePlaybackState('stopped');
+      setNowPlaying(prev => ({ ...prev, isPlaying: false }));
     });
     if (errorSub && typeof errorSub.unsubscribe === 'function') {
       subscriptions.push(errorSub.unsubscribe);
@@ -319,36 +231,6 @@ function App() {
       subscriptions.forEach(unsub => unsub());
     };
   }, []);
-
-  // Tauri 창 상태 복원
-  /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect(() => {
-    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
-    
-    const initWindow = async () => {
-      await restoreWindowState();
-    };
-    initWindow();
-    
-    // 창 resize/move 이벤트 구독 (Tauri 2)
-    // Tauri 2에서는 Window API를 통해 이벤트 구독
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    const win = tauriWindow.getCurrentWindow();
-    /* eslint-enable @typescript-eslint/no-unused-vars */
-    
-    // 창 상태 변경 감지 및 저장
-    const handleWindowStateChange = async () => {
-      await saveWindowState();
-    };
-    
-    win.onResized(handleWindowStateChange);
-    win.onMoved(handleWindowStateChange);
-    
-    return () => {
-      // 이벤트 구독 해제는 자동으로 처리됨
-    };
-  }, []);
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Tauri 모드 변경 이벤트 리스너
   useEffect(() => {
@@ -369,7 +251,8 @@ function App() {
     };
   }, []);
 
-  const playTrack = async (track: Track, saveNewTrack = false) => {
+  const playTrack = useCallback(async (track: Track, saveNewTrack = false) => {
+    const playerTrackId = playerManager.getCurrentTrack()?.id;
     const loadedTrack = await playerManager.load(track);
     const metadataChanged = track.title !== loadedTrack.title || track.artist !== loadedTrack.artist
       || track.thumbnail !== loadedTrack.thumbnail || track.coverArtUrl !== loadedTrack.coverArtUrl
@@ -381,8 +264,6 @@ function App() {
       setLocalTracks(prev => prev.some(item => item.id === loadedTrack.id)
         ? prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: item.isFavorite } : item)
         : [...prev, loadedTrack]);
-      setFavoritesData(prev => prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: true } : item));
-      setHistoryData(prev => prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: item.isFavorite } : item));
     }
 
     await playerManager.play();
@@ -394,16 +275,21 @@ function App() {
       duration: loadedTrack.duration,
     }));
     setTurntablePlaybackState('playing');
-    await addToHistory(loadedTrack.id);
-  };
+    setQueue(prev => {
+      const existing = prev.findIndex(item => item.id === loadedTrack.id);
+      if (existing >= 0) return prev.map(item => item.id === loadedTrack.id ? loadedTrack : item);
+      const insertion = prev.findIndex(item => item.id === playerTrackId) + 1;
+      return [...prev.slice(0, insertion), loadedTrack, ...prev.slice(insertion)];
+    });
+  }, []);
 
-  const handlePlay = async (track: Track) => {
+  const handlePlay = useCallback(async (track: Track) => {
     try {
       await playTrack(track);
     } catch (err) {
       setError(err instanceof Error ? err.message : '재생 중 오류가 발생했습니다');
     }
-  };
+  }, [playTrack]);
 
   // YouTube 실제 검색 핸들러
   const handleYouTubeSearch = async (query: string) => {
@@ -459,55 +345,6 @@ function App() {
     }, !existingTrack);
   };
 
-  // 창 위치/크기 복원 (Tauri Window API)
-  const restoreWindowState = useCallback(async () => {
-    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
-    
-    try {
-      // 저장된 크기/위치 복원 시도
-      const savedSize = await getWindowSize();
-      const savedPos = await getWindowPosition();
-      const isCurrentlyMaximized = await isMaximized();
-      
-      if (savedSize && savedPos && !isCurrentlyMaximized) {
-        // 화면 경계 내로 보정
-        const screenWidth = (window as any).screenWidth ?? 2560;
-        const screenHeight = (window as any).screenHeight ?? 1440;
-        
-        const clampedWidth = Math.min(Math.max(savedSize.width, 400), screenWidth);
-        const clampedHeight = Math.min(Math.max(savedSize.height, 300), screenHeight);
-        const clampedX = Math.max(0, Math.min(savedPos.x, screenWidth - clampedWidth));
-        const clampedY = Math.max(0, Math.min(savedPos.y, screenHeight - clampedHeight));
-        
-        await setWindowSize(clampedWidth, clampedHeight);
-        await setWindowPosition(clampedX, clampedY);
-      }
-      
-      // always-on-top 복원
-      const savedAOT = await getAlwaysOnTop();
-      if (savedAOT !== null) {
-        await setAlwaysOnTop(savedAOT);
-      }
-    } catch (err) {
-      console.error('Window state restore failed:', err);
-    }
-  }, []);
-
-  // 창 상태 저장 (resize/move 이벤트에서 호출)
-  const saveWindowState = useCallback(async () => {
-    if (!tauriWindow || !(window as any).__TAURI_INTEGRATION__) return;  // Tauri가 아니면 건너뛰기
-    
-    try {
-      const win = tauriWindow.getCurrentWindow();
-      const state = win.getState();
-      
-      await setWindowSize(state.size.width, state.size.height);
-      await setWindowPosition(state.position.x, state.position.y);
-    } catch (err) {
-      console.error('Window state save failed:', err);
-    }
-  }, []);
-
   // 재생/일시정지 토글
   const handlePlayPause = async () => {
     try {
@@ -531,59 +368,22 @@ function App() {
     }
   };
 
-  // 다음 트랙
-  const handleNext = () => {
-    const currentIndex = localTracks.findIndex(t => t.id === nowPlaying.track.id);
-    if (currentIndex === -1) return;
-    
-    const nextIndex = (currentIndex + 1) % localTracks.length;
-    const nextTrack = localTracks[nextIndex];
-    handlePlay(nextTrack);
-  };
+  const currentQueueIndex = queue.findIndex(track => track.id === nowPlaying.track.id);
+  const upcoming = queue.slice(currentQueueIndex + 1);
+  const previousTrack = queue[currentQueueIndex - 1];
+  const nextTrack = upcoming[0];
+  const handleNext = useCallback(() => {
+    if (nextTrack) void handlePlay(nextTrack);
+  }, [nextTrack, handlePlay]);
 
-  // 이전 트랙
-  const handlePrevious = () => {
-    const currentIndex = localTracks.findIndex(t => t.id === nowPlaying.track.id);
-    if (currentIndex === -1) return;
-    
-    const prevIndex = (currentIndex - 1 + localTracks.length) % localTracks.length;
-    const prevTrack = localTracks[prevIndex];
-    handlePlay(prevTrack);
-  };
+  useEffect(() => {
+    const end = playerManager.on('end', handleNext);
+    return () => end.unsubscribe();
+  }, [handleNext]);
 
-  // 즐겨찾기 토글
-  const handleFavoriteToggle = async (track: Track) => {
-    const trackId = track.id;
-    const isFavorited = track.isFavorite;
-    
-    let success = false;
-    if (isFavorited) {
-      success = await removeFavorite(trackId);
-    } else {
-      success = await addFavorite(trackId);
-    }
-    
-    if (success) {
-      // 로컬 트랙 업데이트
-      setLocalTracks(prev => prev.map(t => 
-        t.id === trackId ? { ...t, isFavorite: !t.isFavorite } : t
-      ));
-      // API에서 직접 즐겨찾기 목록 새로고침
-      const updatedFavorites = await getFavorites();
-      setFavoritesData(updatedFavorites);
-    }
+  const handleAddToQueue = (track: Track) => {
+    setQueue(prev => prev.some(item => item.id === track.id) ? prev : [...prev, track]);
   };
-
-  // 큐에 트랙 추가
-  const handleAddToQueue = async (track: Track) => {
-    const success = await addToQueue(track.id);
-    if (success) {
-      // 큐 패널 새로고침
-      const updatedQueue = await getQueue();
-      setQueue(updatedQueue);
-    }
-  };
-
   // 턴테이블 설정 토글
   const handleToggleDynamicVinylLabel = () => {
     const newSettings = { ...turntableSettings, dynamicVinylLabel: !turntableSettings.dynamicVinylLabel };
@@ -592,20 +392,6 @@ function App() {
     
     // Tauri에도 저장
     setSetting('dynamicVinylLabel', String(!turntableSettings.dynamicVinylLabel));
-  };
-
-  // 셔플 토글
-  const handleShuffleToggle = async () => {
-    const newShuffle = playerManager.toggleShuffle();
-    await setShuffle(newShuffle);
-    setNowPlaying(prev => ({ ...prev, shuffle: newShuffle }));
-  };
-
-  // 반복 모드 토글
-  const handleRepeatToggle = async () => {
-    const newRepeat = playerManager.cycleRepeat();
-    await setRepeat(newRepeat);
-    setNowPlaying(prev => ({ ...prev, repeat: newRepeat }));
   };
 
   // 턴테이블 모드 핸들러
@@ -631,17 +417,6 @@ function App() {
 
   return (
     <div className="vw-root">
-      {/* 사이드바 */}
-      {!isTurntableMode && (
-        <Sidebar
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          currentMode={currentMode}
-          onModeChange={handleModeChange}
-          queueLength={queue.length}
-        />
-      )}
-      
       {/* SoundCloud Player Container (위젯용) */}
       <div id="soundcloud-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
       
@@ -649,35 +424,39 @@ function App() {
       <div id="youtube-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
       
       {/* 메인 컨텐츠 */}
-      <div className={`vw-main${isTurntableMode ? ' vw-main--turntable' : ''}`}>
-        {/* 턴테이블 모드 뷰 */}
+      <div className="vw-main">
+        <header className="vw-turntable-toolbar">
+          <span className="vw-turntable-toolbar__brand">OBJETUNE</span>
+          {isTurntableMode && (
+            <details className="vw-turntable-toolbar__settings">
+              <summary aria-label="Turntable settings">설정</summary>
+              <Settings
+                settings={turntableSettings}
+                onToggleDynamicVinylLabel={handleToggleDynamicVinylLabel}
+                className="vw-turntable-settings"
+              />
+            </details>
+          )}
+          <div className="vw-mode-switch" role="group" aria-label="화면 모드">
+            <button type="button" aria-pressed={!isTurntableMode} onClick={() => handleModeChange('library')}>
+              라이브러리
+            </button>
+            <button type="button" aria-pressed={isTurntableMode} onClick={() => handleModeChange('turntable')}>
+              LP
+            </button>
+          </div>
+        </header>
         {isTurntableMode && (
-          <>
-            <header className="vw-turntable-toolbar">
-              <span className="vw-turntable-toolbar__brand">OBJETUNE</span>
-              <button type="button" onClick={() => handleModeChange('library')}>
-                Library
-              </button>
-              <details className="vw-turntable-toolbar__settings">
-                <summary aria-label="Turntable settings">Settings</summary>
-                <Settings
-                  settings={turntableSettings}
-                  onToggleDynamicVinylLabel={handleToggleDynamicVinylLabel}
-                  className="vw-turntable-settings"
-                />
-              </details>
-            </header>
-            <Turntable
+          <Turntable
               nowPlaying={nowPlaying}
               playbackState={turntablePlaybackState}
               progress={tonearmPosition?.track === turntableTrack ? tonearmPosition.progress : 0}
               onPlayPause={handlePlayPause}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
+              onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
+              onNext={nextTrack ? handleNext : undefined}
               dynamicLabel={turntableSettings.dynamicVinylLabel}
               className="vw-turntable--mode"
             />
-          </>
         )}
         
         {/* 라이브러리 모드 뷰 */}
@@ -700,12 +479,7 @@ function App() {
             {/* 컨텐츠 영역 */}
             <main className="vw-content" role="main">
               <div className="vw-content__header">
-                <h1 className="vw-content__title">
-                  {currentView === 'all' && 'Library'}
-                  {currentView === 'playlists' && 'Playlists'}
-                  {currentView === 'favorites' && 'Favorites'}
-                  {currentView === 'recently-played' && 'Recently Played'}
-                </h1>
+                <h1 className="vw-content__title">Library</h1>
               </div>
               
               {/* 오류 상태 */}
@@ -716,7 +490,7 @@ function App() {
               )}
               
               {/* 빈 상태 */}
-              {!error && displayItems.length === 0 && (
+              {!error && filteredTracks.length === 0 && (
                 <EmptyState
                   title="No music found"
                   description="Try adjusting your search or filter criteria"
@@ -724,41 +498,17 @@ function App() {
               )}
               
               {/* 결과 목록 */}
-              {displayItems.length > 0 && (
+              {filteredTracks.length > 0 && (
                 <div className="vw-library-grid">
-                  {displayItems.map((item) => {
-                    if (isPlaylistView) {
-                      const playlist = item as Playlist;
-                      return (
-                        <div
-                          key={playlist.id}
-                          className="vw-music-card vw-music-card--playlist"
-                          role="button"
-                          tabIndex={0}
-                          aria-label={playlist.name}
-                        >
-                          <div className="vw-music-card__image" />
-                          <div className="vw-music-card__info">
-                            <h3 className="vw-music-card__title">{playlist.name}</h3>
-                            <p className="vw-music-card__artist">{playlist.description}</p>
-                            <p className="vw-music-card__album">{playlist.trackCount} tracks • {new Date(playlist.updatedAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    
-                    const track = item as Track;
-                    return (
-                      <MusicCard
-                        key={track.id}
-                        track={track}
-                        onPlay={handlePlay}
-                        onClick={handlePlay}
-                        onFavoriteToggle={handleFavoriteToggle}
-                        onAddToQueue={handleAddToQueue}
-                      />
-                    );
-                  })}
+                  {filteredTracks.map(track => (
+                    <MusicCard
+                      key={track.id}
+                      track={track}
+                      onPlay={handlePlay}
+                      onClick={handlePlay}
+                      onAddToQueue={handleAddToQueue}
+                    />
+                  ))}
                 </div>
               )}
             </main>
@@ -767,22 +517,35 @@ function App() {
             <MiniPlayer
               nowPlaying={nowPlaying}
               onPlayPause={handlePlayPause}
-              onNext={handleNext}
-              onPrevious={handlePrevious}
-              onShuffleToggle={handleShuffleToggle}
-              onRepeatToggle={handleRepeatToggle}
-              onQueueToggle={() => setQueuePanelOpen(true)}
-            />
-
-            {/* 큐 패널 */}
-            <QueuePanel
-              isOpen={queuePanelOpen}
-              onClose={() => setQueuePanelOpen(false)}
-              nowPlaying={nowPlaying.track}
-              onPlayTrack={handlePlay}
+              onNext={nextTrack ? handleNext : undefined}
+              onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
             />
           </>
         )}
+        <div className="vw-session-queue">
+          {queuePanelOpen && (
+            <section id="session-queue" className="vw-session-queue__panel" aria-label="현재 재생목록">
+              <h2>현재 재생목록</h2>
+              {nowPlaying.track.id && <p>현재 곡 · {nowPlaying.track.title}</p>}
+              {upcoming.length === 0 ? <p>대기 중인 곡이 없습니다.</p> : (
+                <ol>
+                  {upcoming.map(track => (
+                    <li key={track.id}>
+                      <button type="button" onClick={() => handlePlay(track)}>{track.title}</button>
+                      <button type="button" aria-label={`${track.title} 대기열에서 제거`} onClick={() =>
+                        setQueue(prev => prev.filter(item => item.id !== track.id))
+                      }>×</button>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          )}
+          <button type="button" className="vw-session-queue__toggle" aria-expanded={queuePanelOpen} aria-controls={queuePanelOpen ? 'session-queue' : undefined}
+            onClick={() => setQueuePanelOpen(prev => !prev)}>
+            대기열{upcoming.length > 0 ? ` ${upcoming.length}` : ''}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -58,18 +58,20 @@ describe('App', () => {
       render(<App />);
     });
     expect(screen.getByLabelText('Search music')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Switch to SoundCloud' })).toBeInTheDocument();
+    const platform = screen.getByRole('switch', { name: 'SoundCloud 모드' });
+    expect(platform).not.toBeChecked();
+    fireEvent.click(platform);
+    expect(platform).toBeChecked();
+    expect(screen.getByPlaceholderText('SoundCloud는 트랙 URL을 입력하여 재생할 수 있습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add SoundCloud track' })).toBeInTheDocument();
   });
 
-  it('renders navigation items', async () => {
+  it('removes the old sidebar navigation', async () => {
     await act(async () => {
       render(<App />);
     });
-    const libraryElements = screen.getAllByText('Library');
-    expect(libraryElements.length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Playlists').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Favorites').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Recently Played').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('navigation', { name: 'Main navigation' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/playlists|favorites|recently played/i)).not.toBeInTheDocument();
   });
 
   it('renders tracks in library view', async () => {
@@ -88,16 +90,18 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: 'Mini player' })).toBeInTheDocument();
   });
 
-  it('changes view when navigation item is clicked', async () => {
+  it('keeps the same mode buttons in the header across both views', async () => {
     await act(async () => {
       render(<App />);
     });
-    const playlistsLink = screen.getByRole('link', { name: /playlists/i });
-    fireEvent.click(playlistsLink);
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /playlists/i })).toBeInTheDocument();
-    });
-    expect(screen.getByText('Vintage Classics')).toBeInTheDocument();
+    const lp = screen.getByRole('button', { name: 'LP' });
+    const library = screen.getByRole('button', { name: '라이브러리' });
+    fireEvent.click(lp);
+    expect(await screen.findByRole('region', { name: 'Turntable' })).toBeInTheDocument();
+    expect(lp).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(library);
+    expect(await screen.findByRole('heading', { name: 'Library' })).toBeInTheDocument();
+    expect(library).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('filters tracks by search query', async () => {
@@ -125,16 +129,16 @@ describe('App', () => {
     });
   });
 
-  it('renders playlists', async () => {
+  it('shows queued tracks from the bottom button and keeps the queue across modes', async () => {
     await act(async () => {
       render(<App />);
     });
-    // Click on Playlists tab first
-    const playlistsLink = screen.getByRole('link', { name: /playlists/i });
-    fireEvent.click(playlistsLink);
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /playlists/i })).toBeInTheDocument();
-    });
-    expect(screen.getByText('Vintage Classics')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add Blue Moon to queue' }));
+    fireEvent.click(screen.getByRole('button', { name: '대기열 1' }));
+    expect(screen.getByRole('region', { name: '현재 재생목록' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'LP' }));
+    expect(await screen.findByRole('region', { name: 'Turntable' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Blue Moon 대기열에서 제거' }));
+    expect(screen.getByText('대기 중인 곡이 없습니다.')).toBeInTheDocument();
   });
 });

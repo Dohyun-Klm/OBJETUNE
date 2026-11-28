@@ -1193,6 +1193,9 @@ async fn load_window_state(app: tauri::AppHandle) -> Result<bool, ErrorResponse>
                 if !window.is_visible().map_err(|e| ErrorResponse { message: e.to_string() })? {
                     return Ok(true);
                 }
+                if state.get("maximized").and_then(|value| value.as_bool()) == Some(true) {
+                    return Ok(true);
+                }
                 
                 if let (Some(x), Some(y), Some(w), Some(h)) = (
                     state.get("x").and_then(|v| v.as_i64()),
@@ -1200,13 +1203,8 @@ async fn load_window_state(app: tauri::AppHandle) -> Result<bool, ErrorResponse>
                     state.get("width").and_then(|v| v.as_u64()),
                     state.get("height").and_then(|v| v.as_u64()),
                 ) {
-                    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x: x as f64, y: y as f64 }));
-                    let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: w as f64, height: h as f64 }));
-                    if let Some(max) = state.get("maximized").and_then(|v| v.as_bool()) {
-                        if max {
-                            let _ = window.maximize();
-                        }
-                    }
+                    let _ = window.set_position(tauri::PhysicalPosition::new(x as i32, y as i32));
+                    let _ = window.set_size(tauri::PhysicalSize::new(w as u32, h as u32));
                 }
             }
         }

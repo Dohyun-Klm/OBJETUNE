@@ -8,28 +8,56 @@
   border-bottom: 1px solid var(--vw-border);
 }
 
-.vw-search-bar__platform-btn {
-  padding: 0.5rem 1rem;
+.vw-search-bar__platform-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--vw-border);
   border-radius: var(--vw-control-radius);
-  background: var(--vw-bg-primary);
   color: var(--vw-text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
+  background: var(--vw-bg-primary);
+  font: inherit;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.vw-search-bar__platform-btn:hover {
-  background: var(--vw-silver);
-  color: var(--vw-text-primary);
-  border-color: var(--vw-amber-dark);
+.vw-search-bar__lever {
+  position: relative;
+  width: 2.1rem;
+  height: 1.15rem;
+  border: 1px solid var(--vw-silver);
+  border-radius: 1rem;
+  background: var(--vw-bg-card);
 }
 
-.vw-search-bar__platform-btn.active {
-  background: var(--vw-amber-bg);
-  border-color: var(--vw-amber-dark);
-  color: var(--vw-amber-primary);
+.vw-search-bar__lever::after {
+  content: '';
+  position: absolute;
+  top: 0.13rem;
+  left: 0.16rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--vw-gradient-amber);
+  transition: transform 160ms ease;
+}
+
+.vw-search-bar__platform-switch[aria-checked='true'] .vw-search-bar__lever::after {
+  transform: translateX(0.88rem);
+}
+
+.vw-search-bar__platform-switch[aria-checked='false'] > :first-child,
+.vw-search-bar__platform-switch[aria-checked='true'] > :last-child {
+  color: var(--vw-focus);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vw-search-bar__lever::after {
+    transition: none;
+  }
 }
 
 .vw-search-bar__input-area {
@@ -80,9 +108,13 @@
 @media (max-width: 560px) {
   .vw-search-bar {
     padding-inline: 0.5rem;
+    flex-wrap: wrap;
   }
 
-  .vw-search-bar__platform-btn,
+  .vw-search-bar__input-area {
+    flex-basis: 100%;
+  }
+
   .vw-search-bar__input,
   .vw-search-bar__submit {
     padding-inline: 0.45rem;

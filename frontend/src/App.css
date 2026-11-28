@@ -14,11 +14,11 @@
   overflow: hidden;
 }
 
-.vw-main {
+.vw-root .vw-main {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  margin-left: 240px;
+  margin-left: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -60,17 +60,77 @@
   color: var(--vw-focus);
 }
 
-.vw-music-card--playlist .vw-music-card__image {
-  aspect-ratio: 4 / 3;
+.vw-mode-switch {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.vw-mode-switch button,
+.vw-session-queue button {
+  border: 1px solid var(--vw-border);
+  border-radius: var(--vw-control-radius);
+  padding: 0.45rem 0.65rem;
+  background: var(--vw-bg-card);
+  color: var(--vw-text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vw-mode-switch button[aria-pressed='true'],
+.vw-session-queue__toggle[aria-expanded='true'] {
+  border-color: var(--vw-amber-dark);
+  color: var(--vw-focus);
+}
+
+.vw-session-queue {
+  position: fixed;
+  right: 0.8rem;
+  bottom: 0.75rem;
+  z-index: 30;
+}
+
+.vw-session-queue__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  width: min(22rem, calc(100vw - 1.6rem));
+  max-height: min(24rem, calc(100dvh - 8rem));
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 0.8rem;
+  border: 1px solid var(--vw-border);
+  border-radius: var(--vw-control-radius);
+  background: var(--vw-bg-secondary);
+  box-shadow: 0 12px 32px #0008;
+}
+
+.vw-session-queue__panel h2,
+.vw-session-queue__panel p,
+.vw-session-queue__panel ol {
+  margin: 0 0 0.5rem;
+}
+
+.vw-session-queue__panel h2 {
+  font-size: 1rem;
+}
+
+.vw-session-queue__panel ol {
+  padding-left: 1.35rem;
+}
+
+.vw-session-queue__panel li + li {
+  margin-top: 0.25rem;
+}
+
+.vw-session-queue__panel li button + button {
+  margin-left: 0.25rem;
 }
 
 @media (max-width: 768px) {
-  .vw-main {
-    margin-left: 60px;
-  }
-
   .vw-content {
-    padding: 1rem 0.85rem 5.5rem;
+    padding: 1rem 0.85rem;
   }
 
   .vw-content__header {

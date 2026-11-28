@@ -9,9 +9,6 @@ import {
   getAlwaysOnTop,
   toggleAlwaysOnTop,
   minimize,
-  maximize,
-  unmaximize,
-  isMaximized,
   getStartupEnabled,
   setStartupEnabled,
   getMinimizeToTray,
@@ -31,7 +28,6 @@ interface WindowState {
   x: number;
   y: number;
   alwaysOnTop: boolean;
-  isMaximized: boolean;
   startupEnabled: boolean;
   minimizeToTray: boolean;
 }
@@ -47,7 +43,6 @@ export const Settings: React.FC<SettingsProps> = ({
     x: 0,
     y: 0,
     alwaysOnTop: false,
-    isMaximized: false,
     startupEnabled: false,
     minimizeToTray: true,
   });
@@ -69,7 +64,6 @@ export const Settings: React.FC<SettingsProps> = ({
     const size = await getWindowSize();
     const pos = await getWindowPosition();
     const aot = await getAlwaysOnTop();
-    const maximized = await isMaximized();
 
     setWindowState(prev => ({
       ...prev,
@@ -78,7 +72,6 @@ export const Settings: React.FC<SettingsProps> = ({
       x: pos?.x ?? 0,
       y: pos?.y ?? 0,
       alwaysOnTop: aot ?? false,
-      isMaximized: maximized ?? false,
     }));
 
     setWidthInput(size?.width ?? 800);
@@ -130,18 +123,6 @@ export const Settings: React.FC<SettingsProps> = ({
         alwaysOnTop: !prev.alwaysOnTop,
       }));
     }
-  };
-
-  const handleMaximizeToggle = async () => {
-    if (windowState.isMaximized) {
-      await unmaximize();
-    } else {
-      await maximize();
-    }
-    setWindowState(prev => ({
-      ...prev,
-      isMaximized: !prev.isMaximized,
-    }));
   };
 
   const handleMinimize = async () => {
@@ -293,13 +274,6 @@ export const Settings: React.FC<SettingsProps> = ({
                   aria-label="Minimize"
                 >
                   Minimize
-                </button>
-                <button
-                  className="vw-settings__btn"
-                  onClick={handleMaximizeToggle}
-                  aria-label={windowState.isMaximized ? 'Unmaximize' : 'Maximize'}
-                >
-                  {windowState.isMaximized ? 'Unmaximize' : 'Maximize'}
                 </button>
                 <button
                   className="vw-settings__btn"
