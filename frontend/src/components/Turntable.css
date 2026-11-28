@@ -1,27 +1,103 @@
-/* Dedicated, focused main player screen */
+.vw-main.vw-main--turntable {
+  margin-left: 0;
+}
+
+.vw-turntable-toolbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem clamp(0.85rem, 3vw, 2rem);
+  background: #17120f;
+  border-bottom: 1px solid #473526;
+}
+
+.vw-turntable-toolbar__brand {
+  margin-right: auto;
+  color: #f0c486;
+  font: 600 0.9rem Georgia, serif;
+  letter-spacing: 0.12em;
+}
+
+.vw-turntable-toolbar > button,
+.vw-turntable-toolbar summary {
+  display: block;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #654930;
+  border-radius: 0.5rem;
+  background: #2a2019;
+  color: #f5e9da;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vw-turntable-toolbar summary::-webkit-details-marker {
+  display: none;
+}
+
+.vw-turntable-toolbar .vw-turntable-settings {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0.75rem;
+  width: min(23rem, calc(100% - 1.5rem));
+  max-height: calc(100dvh - 4.5rem);
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #654930;
+  box-shadow: 0 12px 32px #080604b3;
+}
+
 .vw-turntable-container {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  justify-items: center;
+  grid-template-columns: minmax(0, 38rem) minmax(0, 25rem);
+  justify-content: center;
+  align-content: safe center;
   align-items: center;
-  gap: clamp(0.5rem, 1.5vh, 1rem);
-  padding: clamp(0.75rem, 2vh, 1.5rem) clamp(0.75rem, 3vw, 2rem);
+  gap: clamp(1.25rem, 4vw, 4rem);
+  padding: clamp(1rem, 4vw, 3rem);
   overflow-y: auto;
   background:
-    radial-gradient(ellipse at 50% 44%, rgba(208, 151, 82, 0.16), transparent 45%),
-    linear-gradient(135deg, rgba(93, 58, 32, 0.38), transparent 52%);
+    radial-gradient(ellipse at 28% 48%, #4a3022, transparent 60%),
+    linear-gradient(145deg, #251b14, #171310 75%);
 }
 
-.vw-player-screen__metadata {
-  width: min(100%, 620px);
-  text-align: center;
+.vw-player-screen__art {
+  position: relative;
+  width: min(100%, 72vh);
+  justify-self: center;
+  aspect-ratio: 6 / 5;
+}
+
+.vw-player-screen__sleeve {
+  position: absolute;
+  inset: 5% auto auto 0;
+  width: 74%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid #78583b;
+  border-radius: 0.5rem;
+  background: repeating-linear-gradient(105deg, #39271e 0 9px, #402c21 10px 18px);
+  box-shadow: 0 16px 30px #110b09aa;
+}
+
+.vw-player-screen__sleeve img:not([hidden]) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vw-player-screen__details {
+  min-width: 0;
 }
 
 .vw-player-screen__eyebrow {
   margin: 0 0 0.35rem;
-  color: var(--vw-amber-primary);
+  color: #f0c486;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -32,10 +108,11 @@
   margin: 0;
   color: var(--vw-text-primary);
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.35rem, 3vw, 2.15rem);
+  font-size: clamp(1.35rem, 3.4vw, 2.75rem);
   font-weight: 500;
   line-height: 1.15;
   text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 
 .vw-player-screen__artist {
@@ -43,15 +120,16 @@
   color: var(--vw-text-secondary);
   font-size: 0.9rem;
   letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
 }
 
 .vw-turntable {
-  position: relative;
-  width: min(560px, 62vh, calc(100vw - 300px));
-  max-width: 100%;
+  position: absolute;
+  right: 0;
+  top: 7%;
+  width: 75%;
   aspect-ratio: 1;
-  margin: 0 auto;
-  border: 7px solid #352417;
+  border: 3px solid #4d3324;
   border-radius: 50%;
   background:
     radial-gradient(circle at 28% 22%, rgba(255, 224, 171, 0.2), transparent 28%),
@@ -67,7 +145,7 @@
 
 .vw-turntable__body {
   position: absolute;
-  inset: 5%;
+  inset: 2%;
   width: auto;
   height: auto;
   border: 1px solid rgba(230, 194, 142, 0.28);
@@ -80,12 +158,28 @@
   justify-content: center;
 }
 
+.vw-turntable__body .vw-vinyl {
+  width: 96%;
+}
+
+.vw-turntable__body .vw-tonearm {
+  top: 8%;
+  left: 79%;
+  right: auto;
+  width: 52%;
+  transform: rotate(84deg);
+}
+
+.vw-turntable[data-playback-state='playing'] .vw-turntable__body .vw-tonearm {
+  transform: rotate(109deg);
+}
+
 .vw-player-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: clamp(1.1rem, 3vw, 2rem);
-  padding: 0.15rem 0 0.5rem;
+  justify-content: flex-start;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
 }
 
 .vw-player-controls button {
@@ -117,30 +211,37 @@
 .vw-player-controls__primary {
   width: 58px;
   height: 58px;
-  background: var(--vw-gradient-amber);
+  background: linear-gradient(145deg, #f0c486, #bb7844);
   box-shadow: 0 5px 20px rgba(224, 166, 84, 0.25);
   color: #21170f !important;
   font-size: 1.25rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 560px) {
   .vw-turntable-container {
-    gap: 0.65rem;
-    padding: 0.75rem 0.5rem;
+    grid-template-columns: minmax(0, 24rem);
+    align-content: start;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem 1.25rem;
   }
 
-  .vw-turntable {
-    width: min(560px, 60vh, calc(100vw - 84px));
+  .vw-player-screen__art {
+    width: min(100%, 18rem);
+  }
+
+  .vw-player-screen__details {
+    text-align: center;
+  }
+
+  .vw-player-controls {
+    justify-content: center;
+    margin-top: 0.75rem;
   }
 }
 
 @media (max-width: 420px) {
   .vw-player-screen__artist {
     font-size: 0.78rem;
-  }
-
-  .vw-turntable {
-    width: min(560px, 54vh, calc(100vw - 74px));
   }
 
   .vw-player-controls__secondary {

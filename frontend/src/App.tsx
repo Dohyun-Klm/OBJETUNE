@@ -674,13 +674,15 @@ function App() {
   return (
     <div className="vw-root">
       {/* 사이드바 */}
-      <Sidebar 
-        currentView={currentView} 
-        onViewChange={setCurrentView}
-        currentMode={currentMode}
-        onModeChange={handleModeChange}
-        queueLength={queue.length}
-      />
+      {!isTurntableMode && (
+        <Sidebar
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          currentMode={currentMode}
+          onModeChange={handleModeChange}
+          queueLength={queue.length}
+        />
+      )}
       
       {/* SoundCloud Player Container (위젯용) */}
       <div id="soundcloud-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
@@ -689,10 +691,24 @@ function App() {
       <div id="youtube-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
       
       {/* 메인 컨텐츠 */}
-      <div className="vw-main">
+      <div className={`vw-main${isTurntableMode ? ' vw-main--turntable' : ''}`}>
         {/* 턴테이블 모드 뷰 */}
         {isTurntableMode && (
           <>
+            <header className="vw-turntable-toolbar">
+              <span className="vw-turntable-toolbar__brand">OBJETUNE</span>
+              <button type="button" onClick={() => handleModeChange('library')}>
+                Library
+              </button>
+              <details className="vw-turntable-toolbar__settings">
+                <summary aria-label="Turntable settings">Settings</summary>
+                <Settings
+                  settings={turntableSettings}
+                  onToggleDynamicVinylLabel={handleToggleDynamicVinylLabel}
+                  className="vw-turntable-settings"
+                />
+              </details>
+            </header>
             <Turntable
               nowPlaying={nowPlaying}
               playbackState={turntablePlaybackState}
@@ -701,11 +717,6 @@ function App() {
               onNext={handleNext}
               dynamicLabel={turntableSettings.dynamicVinylLabel}
               className="vw-turntable--mode"
-            />
-            <Settings
-              settings={turntableSettings}
-              onToggleDynamicVinylLabel={handleToggleDynamicVinylLabel}
-              className="vw-turntable-settings"
             />
           </>
         )}
