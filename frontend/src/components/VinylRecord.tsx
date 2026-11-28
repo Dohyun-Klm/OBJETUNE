@@ -18,27 +18,8 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
 }) => {
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef(0);
-  const [displayedCoverArt, setDisplayedCoverArt] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
+  const [failedCoverArt, setFailedCoverArt] = useState<string>();
   const animationRef = useRef<number | null>(null);
-
-  // coverArtUrl 로드 처리
-  useEffect(() => {
-    if (coverArtUrl && !imageError) {
-      const img = new Image();
-      img.onload = () => {
-        setDisplayedCoverArt(coverArtUrl);
-        setImageError(false);
-      };
-      img.onerror = () => {
-        setDisplayedCoverArt(null);
-        setImageError(true);
-      };
-      img.src = coverArtUrl;
-    } else {
-      setDisplayedCoverArt(null);
-    }
-  }, [coverArtUrl, imageError]);
 
   // 회전 애니메이션 처리 (reduced-motion 준수)
   useEffect(() => {
@@ -74,8 +55,7 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
     };
   }, [isPlaying]);
 
-  // 테스트용: mockData에서 coverArtUrl이 없으므로 기본 라벨 표시
-  const hasCoverArt = displayedCoverArt && !imageError;
+  const artwork = dynamicLabel && coverArtUrl !== failedCoverArt ? coverArtUrl : undefined;
 
   return (
     <div 
@@ -89,10 +69,12 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
       data-testid="vinyl-record"
     >
       {/* LP 라벨 */}
-      <div className={`vw-vinyl__label ${hasCoverArt ? 'vw-vinyl__label--artwork' : ''}`}>
-        {hasCoverArt ? (
+      <div className={`vw-vinyl__label ${artwork ? 'vw-vinyl__label--artwork' : ''}`}>
+        {artwork ? (
           <img 
-            src={displayedCoverArt!} 
+            key={artwork}
+            src={artwork}
+            onError={() => setFailedCoverArt(artwork)}
             alt={`${track?.title || 'Album'} cover art`}
             className="vw-vinyl__label__artwork-img"
           />

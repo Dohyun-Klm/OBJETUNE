@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './SearchBar.css';
-import { PlatformFilter, PlatformSearchResult, Track } from '../types';
-import { validateSoundCloudUrl, fetchSoundCloudTrackByUrl } from '../services/platformAdapter';
+import { PlatformFilter } from '../types';
+import { validateSoundCloudUrl } from '../services/platformAdapter';
 
 interface SearchBarProps {
   value: string;
@@ -10,10 +10,8 @@ interface SearchBarProps {
   onPlatformFilter: (platform: PlatformFilter) => void;
   placeholder?: string;
   className?: string;
-  onTrackAdded?: (track: Track) => void;
-  onSoundCloudTrackAdded?: (track: PlatformSearchResult) => void;
   onYouTubeSearch?: (query: string) => void;
-  onSoundCloudUrlSubmit?: (url: string) => void;
+  onSoundCloudUrlSubmit?: (url: string) => Promise<void>;
 }
 
 // 현재 지원하는 플랫폼 (Spotify, Bandcamp 비활성화 - API 미연동)
@@ -29,8 +27,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onPlatformFilter,
   placeholder = '검색...',
   className = '',
-  onTrackAdded,
-  onSoundCloudTrackAdded,
   onYouTubeSearch,
   onSoundCloudUrlSubmit,
 }) => {
@@ -50,7 +46,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  const handleSoundCloudSubmit = async () => {
+  const handleSoundCloudSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || !onSoundCloudUrlSubmit) return;
     const trimmedUrl = soundcloudUrl.trim();
     
     if (!trimmedUrl) {
@@ -68,38 +66,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     setUrlError(null);
 
     try {
-      const track = await fetchSoundCloudTrackByUrl(trimmedUrl);
-      if (onSoundCloudTrackAdded) {
-        onSoundCloudTrackAdded(track);
-      }
-      if (onTrackAdded) {
-        // PlatformSearchResult를 Track으로 변환
-        onTrackAdded({
-          id: Date.now().toString(),
-          platform: 'soundcloud',
-          platformId: 'placeholder',
-          title: track.title,
-          artist: track.artist,
-          album: track.album,
-          duration: track.duration,
-          thumbnail: track.thumbnail,
-          url: track.url,
-          embedUrl: track.embedUrl,
-          isPlayable: true,
-          addedAt: new Date().toISOString(),
-        });
-      }
+      await onSoundCloudUrlSubmit(trimmedUrl);
       setSoundcloudUrl('');
     } catch (err: any) {
       setUrlError(err.message || '트랙 조회에 실패했습니다');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && platformFilter === 'soundcloud') {
-      handleSoundCloudSubmit();
     }
   };
 
@@ -123,33 +95,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <div className="vw-search-bar__input-area">
         {platformFilter === 'soundcloud' ? (
           <>
-            <input
-              type="text"
-              className="vw-search-bar__input"
-              value={soundcloudUrl}
-              onChange={(e) => {
-                setSoundcloudUrl(e.target.value);
-                setUrlError(null);
-              }}
-              onKeyPress={handleKeyPress}
-              placeholder="SoundCloud 트랙 URL을 붙여넣기 (예: https://soundcloud.com/artist/track)"
-              aria-label="SoundCloud track URL"
-            />
-            <button
-              className="vw-search-bar__submit"
-              onClick={() => {
-                if (onSoundCloudUrlSubmit) {
-                  onSoundCloudUrlSubmit(soundcloudUrl);
-                  setSoundcloudUrl('');
-                } else {
-                  handleSoundCloudSubmit();
-                }
-              }}
-              disabled={submitting}
-              aria-label="Add SoundCloud track"
-            >
-              {submitting ? '등록중...' : '트랙 추가'}
-            </button>
+            <form className="vw-search-bar__url-form" onSubmit={handleSoundCloudSubmit}>
+              <input
+                type="text"
+                inputMode="url"
+                className="vw-search-bar__input"
+                value={soundcloudUrl}
+                onChange={(e) => {
+                  setSoundcloudUrl(e.target.value);
+                  setUrlError(null);
+                }}
+                placeholder="SoundCloud 트랙 URL"
+                aria-label="SoundCloud track URL"
+                disabled={submitting}
+              />
+              <button
+                type="submit"
+                className="vw-search-bar__submit"
+                disabled={submitting || !onSoundCloudUrlSubmit}
+                aria-label="Add SoundCloud track"
+              >
+                {submitting ? '등록 중…' : '트랙 추가'}
+              </button>
+            </form>
             {urlError && (
               <div className="vw-search-bar__error" role="alert">
                 {urlError}

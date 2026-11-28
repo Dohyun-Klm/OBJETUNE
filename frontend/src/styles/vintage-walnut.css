@@ -99,13 +99,7 @@ html:root {
 }
 
 .vw-sidebar__logo {
-  padding: 1rem 1.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--vw-text-primary);
-  background: var(--vw-gradient-amber);
-  border-bottom: 1px solid var(--vw-amber-dark);
-  margin-bottom: 1rem;
+  background: var(--vw-bg-secondary);
 }
 
 .vw-sidebar__mode-switch {

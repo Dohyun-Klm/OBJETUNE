@@ -3,7 +3,7 @@
   padding: 1rem 1.5rem 0.5rem;
   display: flex;
   gap: 0.5rem;
-  align-items: center;
+  align-items: flex-start;
   background: var(--vw-bg-secondary);
   border-bottom: 1px solid var(--vw-border);
 }
@@ -40,6 +40,13 @@
   gap: 0.25rem;
 }
 
+.vw-search-bar__url-form {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: min(100%, 38rem);
+}
+
 .vw-search-bar__input {
   flex: 1;
   padding: 0.75rem 1rem;
@@ -58,7 +65,8 @@
 }
 
 .vw-search-bar__submit {
-  align-self: flex-start;
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 0.5rem 1rem;
   border: 1px solid var(--vw-silver);
   border-radius: var(--vw-control-radius);
@@ -67,6 +75,18 @@
   cursor: pointer;
   font-size: 0.85rem;
   transition: background 0.2s;
+}
+
+@media (max-width: 560px) {
+  .vw-search-bar {
+    padding-inline: 0.5rem;
+  }
+
+  .vw-search-bar__platform-btn,
+  .vw-search-bar__input,
+  .vw-search-bar__submit {
+    padding-inline: 0.45rem;
+  }
 }
 
 .vw-search-bar__submit:hover:not(:disabled) {

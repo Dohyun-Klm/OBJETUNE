@@ -233,9 +233,13 @@ async fn create_track(req: CreateTrackRequest) -> Result<TrackResponse, ErrorRes
     );
     
     conn.execute(
-        "INSERT OR REPLACE INTO tracks 
+        "INSERT INTO tracks
          (id, platform, platform_id, title, artist, album, duration, thumbnail, url, embed_url, cover_art_url, added_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+         ON CONFLICT(id) DO UPDATE SET title = excluded.title, artist = excluded.artist,
+         album = excluded.album, duration = excluded.duration, thumbnail = excluded.thumbnail,
+         url = excluded.url, embed_url = excluded.embed_url, cover_art_url = excluded.cover_art_url,
+         updated_at = excluded.updated_at",
         rusqlite::params![
             &track.id,
             &track.platform,

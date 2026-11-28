@@ -20,7 +20,6 @@ import {
   PlaybackState,
   NowPlaying,
   CurrentView,
-  PlatformSearchResult
 } from './types';
 import {
   loadYouTubeAPI, 
@@ -56,7 +55,7 @@ import {
   registerMediaShortcuts,
   unregisterMediaShortcuts
 } from './services/tauriApi';
-import { searchYouTubeTracks, searchSoundCloudByUrl } from './services/tauriApi';
+import { searchYouTubeTracks } from './services/tauriApi';
 
 // Tauri API는 동적으로 가져오기 (테스트 환경에서 모킹 가능)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -370,28 +369,39 @@ function App() {
     };
   }, []);
 
-  // 트랙 재생 핸들러
+  const playTrack = async (track: Track, saveNewTrack = false) => {
+    const loadedTrack = await playerManager.load(track);
+    const metadataChanged = track.title !== loadedTrack.title || track.artist !== loadedTrack.artist
+      || track.thumbnail !== loadedTrack.thumbnail || track.coverArtUrl !== loadedTrack.coverArtUrl
+      || track.duration !== loadedTrack.duration;
+
+    if (loadedTrack.platform === 'soundcloud' && (saveNewTrack || metadataChanged)) {
+      const saved = await createTrack(loadedTrack);
+      if (!saved) throw new Error('SoundCloud 트랙을 라이브러리에 저장하지 못했습니다.');
+      setLocalTracks(prev => prev.some(item => item.id === loadedTrack.id)
+        ? prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: item.isFavorite } : item)
+        : [...prev, loadedTrack]);
+      setFavoritesData(prev => prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: true } : item));
+      setHistoryData(prev => prev.map(item => item.id === loadedTrack.id ? { ...loadedTrack, isFavorite: item.isFavorite } : item));
+    }
+
+    await playerManager.play();
+    setNowPlaying(prev => ({
+      ...prev,
+      track: loadedTrack,
+      isPlaying: true,
+      progress: 0,
+      duration: loadedTrack.duration,
+    }));
+    setTurntablePlaybackState('playing');
+    await addToHistory(loadedTrack.id);
+  };
+
   const handlePlay = async (track: Track) => {
     try {
-      await playerManager.load(track);
-      await playerManager.play();
-      
-      setNowPlaying({
-        track,
-        isPlaying: true,
-        volume: 75,
-        progress: 0,
-        duration: track.duration,
-        shuffle: nowPlaying.shuffle ?? false,
-        repeat: nowPlaying.repeat ?? 'off',
-      });
-      setTurntablePlaybackState('playing');
-
-      // 히스토리 추가
-      await addToHistory(track.id);
+      await playTrack(track);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '재생 중 오류가 발생했습니다';
-      setError(message);
+      setError(err instanceof Error ? err.message : '재생 중 오류가 발생했습니다');
     }
   };
 
@@ -419,44 +429,34 @@ function App() {
     }
   };
 
-  // SoundCloud URL에서 트랙 추가 핸들러
   const handleSoundCloudUrlSubmit = async (url: string) => {
-    if (!url.trim()) return;
-    
-    try {
-      const track = await searchSoundCloudByUrl(url);
-      if (track) {
-        const savedTrack = await createTrack({
-          platform: track.platform,
-          platformId: track.platformId,
-          title: track.title,
-          artist: track.artist,
-          album: track.album,
-          duration: track.duration,
-          thumbnail: track.thumbnail,
-          url: track.url,
-          embedUrl: track.embedUrl,
-          coverArtUrl: track.coverArtUrl,
-          addedAt: track.addedAt,
-          isFavorite: track.isFavorite ?? false,
-        });
-        
-        if (savedTrack) {
-          setLocalTracks(prev => [...prev, savedTrack]);
-          await playerManager.load(savedTrack);
-          await playerManager.play();
-          setNowPlaying(prev => ({
-            ...prev,
-            track: savedTrack,
-            isPlaying: true,
-          }));
-          setTurntablePlaybackState('playing');
-          await addToHistory(savedTrack.id);
-        }
+    const trackUrl = new URL(url);
+    const platformId = trackUrl.hostname.replace(/^www\./, '') + trackUrl.pathname.replace(/\/+$/, '');
+    const existingTrack = localTracks.find(track => {
+      if (track.platform !== 'soundcloud') return false;
+      try {
+        const savedUrl = new URL(track.url);
+        return savedUrl.hostname.replace(/^www\./, '') + savedUrl.pathname.replace(/\/+$/, '') === platformId;
+      } catch {
+        return false;
       }
-    } catch (err: any) {
-      setError(err.message || '트랙 추가 중 오류가 발생했습니다');
-    }
+    });
+
+    setError(null);
+    await playTrack(existingTrack ?? {
+      id: `soundcloud-${platformId}`,
+      platform: 'soundcloud',
+      platformId,
+      title: '',
+      artist: 'SoundCloud',
+      album: '',
+      duration: 0,
+      thumbnail: '',
+      url: trackUrl.href,
+      embedUrl: `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl.href)}`,
+      isPlayable: true,
+      addedAt: new Date().toISOString(),
+    }, !existingTrack);
   };
 
   // 창 위치/크기 복원 (Tauri Window API)
@@ -508,72 +508,6 @@ function App() {
     }
   }, []);
 
-  // SoundCloud URL에서 추가된 트랙 처리
-  const handleSoundCloudTrackAdded = async (track: PlatformSearchResult) => {
-    try {
-      // Tauri DB에 저장
-      const savedTrack = await createTrack({
-        platform: track.platform,
-        title: track.title,
-        artist: track.artist,
-        album: track.album,
-        duration: track.duration,
-        thumbnail: track.thumbnail,
-        url: track.url,
-        embedUrl: track.embedUrl,
-        coverArtUrl: track.thumbnail,
-        addedAt: new Date().toISOString(),
-        isFavorite: false,
-      });
-
-      if (savedTrack) {
-        setLocalTracks(prev => [...prev, savedTrack]);
-      }
-
-      // 플레이어 로드 및 재생
-      await playerManager.load(savedTrack || {
-        ...track,
-        isPlayable: true,
-        addedAt: new Date().toISOString(),
-      } as Track);
-      
-      await playerManager.play();
-      
-      setNowPlaying(prev => ({
-        ...prev,
-        track: savedTrack || { ...track } as Track,
-        isPlaying: true,
-      }));
-      setTurntablePlaybackState('playing');
-
-      setError('트랙이 추가되었습니다.');
-      setTimeout(() => setError(null), 2000);
-    } catch (err: any) {
-      setError(err.message || '트랙 추가 중 오류가 발생했습니다');
-    }
-  };
-
-  // 트랙 클릭 핸들러
-  const handleTrackClick = async (track: Track) => {
-    try {
-      await playerManager.load(track);
-      await playerManager.play();
-      
-      setNowPlaying(prev => ({
-        ...prev,
-        track,
-        isPlaying: true,
-      }));
-      setTurntablePlaybackState('playing');
-
-      // 히스토리 추가
-      await addToHistory(track.id);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '트랙 클릭 중 오류가 발생했습니다';
-      setError(message);
-    }
-  };
-
   // 재생/일시정지 토글
   const handlePlayPause = async () => {
     try {
@@ -604,7 +538,7 @@ function App() {
     
     const nextIndex = (currentIndex + 1) % localTracks.length;
     const nextTrack = localTracks[nextIndex];
-    handleTrackClick(nextTrack);
+    handlePlay(nextTrack);
   };
 
   // 이전 트랙
@@ -614,7 +548,7 @@ function App() {
     
     const prevIndex = (currentIndex - 1 + localTracks.length) % localTracks.length;
     const prevTrack = localTracks[prevIndex];
-    handleTrackClick(prevTrack);
+    handlePlay(prevTrack);
   };
 
   // 즐겨찾기 토글
@@ -754,8 +688,11 @@ function App() {
               value={searchQuery}
               onSearch={setSearchQuery}
               platformFilter={platformFilter}
-              onPlatformFilter={setPlatformFilter}
-              onSoundCloudTrackAdded={handleSoundCloudTrackAdded}
+              onPlatformFilter={(platform) => {
+                setPlatformFilter(platform);
+                setSearchQuery('');
+                setError(null);
+              }}
               onYouTubeSearch={handleYouTubeSearch}
               onSoundCloudUrlSubmit={handleSoundCloudUrlSubmit}
             />
@@ -787,7 +724,7 @@ function App() {
               )}
               
               {/* 결과 목록 */}
-              {!error && displayItems.length > 0 && (
+              {displayItems.length > 0 && (
                 <div className="vw-library-grid">
                   {displayItems.map((item) => {
                     if (isPlaylistView) {
@@ -816,7 +753,7 @@ function App() {
                         key={track.id}
                         track={track}
                         onPlay={handlePlay}
-                        onClick={handleTrackClick}
+                        onClick={handlePlay}
                         onFavoriteToggle={handleFavoriteToggle}
                         onAddToQueue={handleAddToQueue}
                       />
@@ -842,7 +779,7 @@ function App() {
               isOpen={queuePanelOpen}
               onClose={() => setQueuePanelOpen(false)}
               nowPlaying={nowPlaying.track}
-              onPlayTrack={handleTrackClick}
+              onPlayTrack={handlePlay}
             />
           </>
         )}

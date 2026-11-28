@@ -19,9 +19,16 @@ interface EventSubscription {
   unsubscribe: () => void;
 }
 
+interface SoundCloudSound {
+  title?: string;
+  artwork_url?: string | null;
+  duration?: number;
+  user?: { username?: string };
+}
+
 // Player Manager 인터페이스
 export interface PlayerManagerInterface {
-  load(track: Track): Promise<void>;
+  load(track: Track): Promise<Track>;
   play(): Promise<void>;
   pause(): Promise<void>;
   stop(): Promise<void>;
@@ -61,7 +68,7 @@ class PlayerManager implements PlayerManagerInterface {
   /**
    * 현재 트랙 로드 및 플랫폼 어댑터 전환
    */
-  async load(track: Track): Promise<void> {
+  async load(track: Track): Promise<Track> {
     try {
       this.isLoading = true;
       this.error = null;
@@ -77,11 +84,12 @@ class PlayerManager implements PlayerManagerInterface {
       if (track.platform === 'youtube') {
         await this.loadYouTube(track);
       } else if (track.platform === 'soundcloud') {
-        await this.loadSoundCloud(track);
+        this.currentTrack = await this.loadSoundCloud(track);
       }
       
       this.isBuffering = false;
-      this.notify('load', { track });
+      this.notify('load', { track: this.currentTrack });
+      return this.currentTrack;
     } catch (error) {
       this.error = error instanceof Error ? error.message : 'Failed to load track';
       this.isBuffering = false;
@@ -133,17 +141,20 @@ class PlayerManager implements PlayerManagerInterface {
   /**
    * SoundCloud Widget 로드
    */
-  private async loadSoundCloud(track: Track): Promise<void> {
+  private async loadSoundCloud(track: Track): Promise<Track> {
     if (!this.soundcloudApiLoaded) {
       await this.ensureSoundCloudAPI();
     }
     
-    return new Promise((resolve, reject) => {
-      try {
+    let timeout: number | undefined;
+    try {
+      return await new Promise<Track>((resolve, reject) => {
+        timeout = window.setTimeout(() => reject(new Error('SoundCloud 트랙 정보를 가져오는 데 시간이 너무 오래 걸렸습니다.')), 15000);
         const iframe = document.createElement('iframe');
         iframe.style.width = '100%';
         iframe.style.height = '0';
         iframe.style.display = 'none';
+        iframe.allow = 'autoplay';
         iframe.src = track.embedUrl || track.url!;
         
         document.body.appendChild(iframe);
@@ -166,9 +177,29 @@ class PlayerManager implements PlayerManagerInterface {
             }
           });
           widget.bind(events.READY, () => {
-            readDuration();
-            this.notify('ready', { track: this.currentTrack });
-            resolve();
+            widget.getCurrentSound((sound: SoundCloudSound | null) => {
+              if (this.soundcloudWidget !== widget) return;
+              const title = sound?.title?.trim();
+              if (!title) {
+                reject(new Error('SoundCloud에서 재생할 수 있는 공개 트랙을 찾지 못했습니다.'));
+                return;
+              }
+              const artwork = sound?.artwork_url || track.coverArtUrl || track.thumbnail;
+              const milliseconds = sound?.duration;
+              if (typeof milliseconds === 'number' && Number.isFinite(milliseconds) && milliseconds > 0) {
+                this.duration = milliseconds / 1000;
+              }
+              const loadedTrack = {
+                ...track,
+                title,
+                artist: sound?.user?.username?.trim() || track.artist,
+                thumbnail: artwork,
+                coverArtUrl: artwork || undefined,
+                duration: Math.round(this.duration),
+              };
+              this.notify('ready', { track: loadedTrack });
+              resolve(loadedTrack);
+            });
           });
           
           widget.bind(events.PLAY, () => {
@@ -187,17 +218,22 @@ class PlayerManager implements PlayerManagerInterface {
             this.notify('end', { state: 'stopped' });
           });
           
-          widget.bind(events.ERROR, (e: any) => {
-            this.error = e.message || 'SoundCloud 재생 오류';
+          widget.bind(events.ERROR, (e?: { message?: string }) => {
+            this.error = e?.message || 'SoundCloud에서 이 트랙을 불러오거나 재생할 수 없습니다.';
             this.notify('error', { message: this.error });
+            reject(new Error(this.error));
           });
         } else {
-          resolve();
+          reject(new Error('SoundCloud Widget을 불러오지 못했습니다.'));
         }
-      } catch (error) {
-        reject(error);
-      }
-    });
+      });
+    } catch (error) {
+      // A newer load may already own the player.
+      if (this.currentTrack === track) this.destroy();
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   /**
