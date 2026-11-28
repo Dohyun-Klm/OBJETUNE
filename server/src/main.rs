@@ -156,7 +156,7 @@ async fn main() {
     // CORS 설정 - Tauri 데스크탑 앱 및 React devOrigin 허용
     // Production에서는 CORS_ORIGINS 환경변수로 허용할 도메인 목록을 콤마로 구분하여 설정
     let cors_origins: Vec<_> = env::var("CORS_ORIGINS")
-        .unwrap_or_else(|_| "http://localhost:3000,http://127.0.0.1:3000,tauri://localhost".to_string())
+        .unwrap_or_else(|_| "http://localhost:3000,http://127.0.0.1:3000,tauri://localhost,http://tauri.localhost".to_string())
         .split(',')
         .filter(|s| !s.trim().is_empty())
         .map(|s| s.trim().parse().unwrap())
@@ -178,7 +178,7 @@ async fn main() {
         .route("/api/v1/youtube/videos/:video_id", get(youtube::get_video))
         .route("/api/v1/soundcloud/search", get(soundcloud::search))
         .route("/api/v1/soundcloud/track", get(soundcloud::get_track_by_url))
-        .layer(Extension(cors))
+        .layer(cors)
         .layer(Extension(app_state));
 
     // 서버 시작 (기본 8080 포트, 환경변수로 재설정 가능)
