@@ -65,14 +65,20 @@ cp .env.example .env
 ### 실행
 
 ```bash
-# 의존성 설치
-cargo build
+# API 서버만 실행 (프로젝트 루트에서)
+npm run dev:server
 
-# 실행
-cargo run
-# 또는
-./target/debug/objetune-api
+# React 개발 서버와 함께 실행할 때는 별도 터미널에서
+npm run dev
+
+# Tauri 개발 실행: API 서버 바이너리 빌드 후 앱이 서버를 자동 실행
+npm run tauri:dev
+
+# Windows 배포 빌드: release API 서버를 리소스에 포함
+npm run tauri:build
 ```
+
+API 키는 Axum 프로세스의 `YOUTUBE_API_KEY` 환경변수에서만 읽습니다. 개발 환경에서는 프로젝트 루트의 `.env`를 Axum 서버가 읽습니다. 배포 환경에서는 OBJETUNE을 실행하는 계정의 환경변수로 설정해야 합니다. API 서버는 `127.0.0.1:8080`에만 바인딩합니다.
 
 ### 테스트
 

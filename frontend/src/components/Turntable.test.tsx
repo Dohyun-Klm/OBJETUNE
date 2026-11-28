@@ -53,6 +53,27 @@ describe('Turntable', () => {
     expect(mockPlayPause).toHaveBeenCalledTimes(1);
   });
 
+  it('shows track metadata and supports previous and next actions', () => {
+    const onPrevious = jest.fn();
+    const onNext = jest.fn();
+    render(
+      <Turntable
+        nowPlaying={mockNowPlaying}
+        playbackState="paused"
+        onPlayPause={() => {}}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Test Song' })).toBeInTheDocument();
+    expect(screen.getByText('Test Artist')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous track' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next track' }));
+    expect(onPrevious).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
+
   it('does not show play button when showPlayButton is false', () => {
     render(<Turntable nowPlaying={mockNowPlaying} playbackState="playing" onPlayPause={() => {}} showPlayButton={false} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
@@ -96,6 +117,19 @@ describe('VinylRecord (via Turntable)', () => {
     };
     render(<Turntable nowPlaying={trackWithoutArt} playbackState="stopped" onPlayPause={() => {}} showPlayButton={false} />);
     expect(screen.getByText('OBJETUNE')).toBeInTheDocument();
+  });
+
+  it('shows dynamic track information on the label when enabled', () => {
+    render(
+      <Turntable
+        nowPlaying={mockNowPlaying}
+        playbackState="paused"
+        onPlayPause={() => {}}
+        showPlayButton={false}
+        dynamicLabel
+      />
+    );
+    expect(screen.getAllByText('Test Song').length).toBeGreaterThan(1);
   });
 
   it('shows PAUSED status when not playing', () => {

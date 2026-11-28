@@ -3,6 +3,10 @@
  * YouTube IFrame Player API 및 SoundCloud Widget API 추상화
  */
 
+import { searchYouTubeTracks } from './tauriApi';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8080';
+
 export type Platform = 'youtube' | 'soundcloud';
 
 export interface PlatformSearchResult {
@@ -54,53 +58,20 @@ class YouTubeAdapter implements PlatformAdapter {
   private isAPILoaded = false;
 
   async search(query: string, limit: number = 10): Promise<PlatformSearchResult[]> {
-    // Tauri 환경에서는 모의 데이터 사용 (API 키 없이도 동작 가능하도록)
-    const mockResults = [
-      {
-        id: 'bgV2z7pXGzI',
-        videoId: 'bgV2z7pXGzI',
-        title: 'Bohemian Rhapsody - Queen',
-        artist: 'Queen',
-        album: '',
-        duration: 354,
-        thumbnail: 'https://i.ytimg.com/vi/bgV2z7pXGzI/mqdefault.jpg',
-        platform: 'youtube' as Platform,
-        url: 'https://youtube.com/watch?v=bgV2z7pXGzI',
-        embedUrl: 'https://www.youtube.com/embed/bgV2z7pXGzI',
-        isPlayable: true,
-      },
-      {
-        id: 'L_jWHFFxARD',
-        videoId: 'L_jWHFFxARD',
-        title: 'Sweet Child O\' Mine - Guns N\' Roses',
-        artist: 'Guns N\' Roses',
-        album: '',
-        duration: 272,
-        thumbnail: 'https://i.ytimg.com/vi/L_jWHFFxARD/mqdefault.jpg',
-        platform: 'youtube' as Platform,
-        url: 'https://youtube.com/watch?v=L_jWHFFxARD',
-        embedUrl: 'https://www.youtube.com/embed/L_jWHFFxARD',
-        isPlayable: true,
-      },
-      {
-        id: 'X04m5PnX0xE',
-        videoId: 'X04m5PnX0xE',
-        title: 'Hotel California (Live) - Eagles',
-        artist: 'Eagles',
-        album: '',
-        duration: 398,
-        thumbnail: 'https://i.ytimg.com/vi/X04m5PnX0xE/mqdefault.jpg',
-        platform: 'youtube' as Platform,
-        url: 'https://youtube.com/watch?v=X04m5PnX0xE',
-        embedUrl: 'https://www.youtube.com/embed/X04m5PnX0xE',
-        isPlayable: true,
-      },
-    ];
-    
-    return mockResults.filter(item => 
-      item.title.toLowerCase().includes(query.toLowerCase()) ||
-      item.artist.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, limit);
+    const tracks = await searchYouTubeTracks(query, limit);
+    return tracks.map(track => ({
+      id: track.id,
+      videoId: track.platformId,
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      duration: track.duration,
+      thumbnail: track.thumbnail,
+      platform: 'youtube',
+      url: track.url,
+      embedUrl: track.embedUrl,
+      isPlayable: track.isPlayable,
+    }));
   }
 
   async load(track: PlatformSearchResult): Promise<void> {
@@ -290,11 +261,9 @@ class SoundCloudAdapter implements PlatformAdapter {
   private widget: any = null;
 
   async search(query: string, limit: number = 10): Promise<PlatformSearchResult[]> {
-    // SoundCloud 검색은 API 키 문제로 비활성화됨
-    // 대신 URL 입력 방식으로 재생 지원
-    const error = new Error('SoundCloud 검색은 artist pro 구독이 필요합니다. 트랙 URL을 직접 입력해주세요.');
-    (error as any).code = 'SEARCH_NOT_SUPPORTED';
-    throw error;
+    void query;
+    void limit;
+    return [];
   }
 
   async load(track: PlatformSearchResult): Promise<void> {
@@ -547,31 +516,35 @@ export function validateSoundCloudUrl(url: string): { isValid: boolean; error?: 
 
 // SoundCloud 트랙 URL에서 track 정보 조회
 export async function fetchSoundCloudTrackByUrl(url: string): Promise<PlatformSearchResult> {
-  // 프론트엔드에서 직접 SoundCloud Widget URL 생성
-  // Artist Pro 구독 없이도 Widget으로 재생 가능
   const trimmedUrl = url.trim();
-  
-  // URL에서 artist/track 추출
-  const trackName = trimmedUrl.split('/').pop()?.replace(/[-_]/g, ' ') || 'SoundCloud Track';
-  
-  // SoundCloud Widget URL 생성
-  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trimmedUrl)}`;
-  
-  // artist 추출 (URL에서)
-  const urlParts = trimmedUrl.split('/');
-  const artistIndex = urlParts.indexOf('soundcloud.com') + 1;
-  const artist = urlParts[artistIndex] || 'Unknown';
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/soundcloud/track?url=${encodeURIComponent(trimmedUrl)}`
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message || `SoundCloud URL 조회 실패 (${response.status})`);
+  }
+  const track = await response.json() as {
+    id: string;
+    title: string;
+    description: string;
+    url: string;
+    embed_url: string;
+    artwork_url: string | null;
+    duration: number;
+  };
+  const artist = new URL(track.url).pathname.split('/').filter(Boolean)[0] || 'SoundCloud';
   
   return {
-    id: Date.now().toString(), // 고유 ID
-    title: trackName,
+    id: track.id,
+    title: track.title,
     artist,
-    album: '',
-    duration: 0, // Widget만 사용, 실제 duration은 API에서 못 가져옴
-    thumbnail: `https://w.soundcloud.com/community/theme/icons/brand/sounds.png`, // SoundCloud 기본 썸네일
+    album: track.description || '',
+    duration: Math.round(track.duration / 1000),
+    thumbnail: track.artwork_url || '',
     platform: 'soundcloud',
-    url: trimmedUrl,
-    embedUrl,
+    url: track.url,
+    embedUrl: track.embed_url,
     isPlayable: true,
   };
 }

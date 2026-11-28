@@ -9,6 +9,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use crate::ErrorResponse;
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SoundCloudTrack {
@@ -31,8 +32,7 @@ pub struct TrackQuery {
 async fn extract_track_info(url: &str) -> Result<SoundCloudTrack, String> {
     let trimmed_url = url.trim();
     
-    // SoundCloud URL 정규식 검증
-    if !trimmed_url.contains("soundcloud.com") && !trimmed_url.contains("soundcloud.fr") {
+    if !is_soundcloud_url(trimmed_url) {
         return Err("SoundCloud URL이 아닙니다".to_string());
     }
 
@@ -53,11 +53,9 @@ async fn extract_track_info(url: &str) -> Result<SoundCloudTrack, String> {
         urlencoding::encode(trimmed_url)
     );
     
-    // 간단한 고유 ID 생성
-    let id = format!("sc-{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos());
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    trimmed_url.hash(&mut hasher);
+    let id = format!("sc-{:x}", hasher.finish());
     
     Ok(SoundCloudTrack {
         id,
@@ -68,6 +66,21 @@ async fn extract_track_info(url: &str) -> Result<SoundCloudTrack, String> {
         artwork_url: None,
         duration: 0,
     })
+}
+
+fn is_soundcloud_url(value: &str) -> bool {
+    let Some((scheme, rest)) = value.split_once("://") else {
+        return false;
+    };
+    if scheme != "https" && scheme != "http" {
+        return false;
+    }
+
+    let host = rest.split(['/', '?', '#', ':']).next().unwrap_or_default().to_ascii_lowercase();
+    host == "soundcloud.com"
+        || host.ends_with(".soundcloud.com")
+        || host == "soundcloud.fr"
+        || host.ends_with(".soundcloud.fr")
 }
 
 /// SoundCloud 트랙 URL에서 정보 추출 API
@@ -84,8 +97,7 @@ pub async fn get_track_by_url(
         ));
     }
 
-    // URL 검증
-    if !params.url.contains("soundcloud.com") && !params.url.contains("soundcloud.fr") {
+    if !is_soundcloud_url(params.url.trim()) {
         return Err((
             StatusCode::BAD_REQUEST,
             Json(ErrorResponse {
@@ -106,6 +118,25 @@ pub async fn get_track_by_url(
                 }),
             ))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_soundcloud_url;
+
+    #[test]
+    fn accepts_soundcloud_hosts_over_http_or_https() {
+        assert!(is_soundcloud_url("https://soundcloud.com/artist/track"));
+        assert!(is_soundcloud_url("https://on.soundcloud.com/short-link"));
+        assert!(is_soundcloud_url("http://soundcloud.fr/artist/track"));
+    }
+
+    #[test]
+    fn rejects_urls_with_soundcloud_only_in_the_path_or_query() {
+        assert!(!is_soundcloud_url("https://example.com/soundcloud.com/track"));
+        assert!(!is_soundcloud_url("https://soundcloud.com.example.org/track"));
+        assert!(!is_soundcloud_url("javascript://soundcloud.com/track"));
     }
 }
 

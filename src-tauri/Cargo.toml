@@ -25,11 +25,6 @@ tauri = { version = "2.12.7", features = ["custom-protocol", "devtools", "tray-i
 tauri-plugin-log = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-autostart = "2"
-serde-wasm-bindgen = "0.6"
-
-# HTTP client for YouTube API
-reqwest = { version = "0.12", features = ["json", "blocking"] }
-urlencoding = "2.1"
 
 # SQLite support
 rusqlite = { version = "0.35", features = ["bundled"] }

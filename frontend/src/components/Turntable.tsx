@@ -6,7 +6,10 @@ interface TurntableProps {
   nowPlaying: NowPlaying | null;
   playbackState: PlaybackState;
   onPlayPause: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
   showPlayButton?: boolean;
+  dynamicLabel?: boolean;
   className?: string;
 }
 
@@ -14,47 +17,79 @@ export const Turntable: React.FC<TurntableProps> = ({
   nowPlaying,
   playbackState,
   onPlayPause,
+  onPrevious,
+  onNext,
   showPlayButton = true,
+  dynamicLabel = false,
   className = '',
 }) => {
   const isPlaying = playbackState === 'playing';
-  
-  // LP가 재生 중인지에 따라 스핀 여부 결정
   const shouldSpin = isPlaying && nowPlaying !== null;
+  const hasTrack = Boolean(nowPlaying?.track?.id && nowPlaying.track.title);
 
   return (
-    <div className={`vw-turntable-container ${className}`} role="region" aria-label="Turntable">
-      <div className="vw-turntable">
-        {/* 턴테이블 본체 - 월넛 우드 질감 */}
+    <section className={`vw-turntable-container ${className}`} aria-label="Turntable">
+      <header className="vw-player-screen__metadata" aria-live="polite">
+        <p className="vw-player-screen__eyebrow">NOW SPINNING</p>
+        <h1 className="vw-player-screen__title">
+          {nowPlaying?.track?.title || 'Choose a record'}
+        </h1>
+        <p className="vw-player-screen__artist">
+          {nowPlaying?.track?.artist || 'Select a track from your Library'}
+        </p>
+      </header>
+
+      <div className="vw-turntable" data-playback-state={playbackState}>
         <div className="vw-turntable__body">
-          {/* LP 원판 */}
-          <VinylRecord 
+          <VinylRecord
             track={nowPlaying?.track || null}
             isPlaying={shouldSpin}
-            coverArtUrl={nowPlaying?.track?.coverArtUrl}
+            coverArtUrl={dynamicLabel ? nowPlaying?.track?.coverArtUrl : undefined}
+            dynamicLabel={dynamicLabel}
           />
-          
-          {/* 톤암 */}
-          <div className="vw-tonearm" data-testid="tonearm">
-            <div className="vw-tonearm__pivot" aria-hidden="true" data-testid="tonearm-pivot" />
-            <div className="vw-tonearm__head" aria-hidden="true" data-testid="tonearm-head" />
+          <div className="vw-tonearm" data-testid="tonearm" aria-hidden="true">
+            <div className="vw-tonearm__pivot" data-testid="tonearm-pivot" />
+            <div className="vw-tonearm__head" data-testid="tonearm-head" />
           </div>
-          
-          {/* HP (Hunting Lamp) 조명 효과 */}
           <div className="vw-hp-light" aria-hidden="true" data-testid="hp-light" />
         </div>
-        
-        {/* 재생/일시정지 버튼 */}
+      </div>
+
+      <div className="vw-player-controls" aria-label="Playback controls">
+        {onPrevious && (
+          <button
+            className="vw-player-controls__secondary"
+            type="button"
+            onClick={onPrevious}
+            disabled={!hasTrack}
+            aria-label="Previous track"
+          >
+            ‹‹
+          </button>
+        )}
         {showPlayButton && (
           <button
-            className={`vw-turntable__play-btn ${isPlaying ? 'vw-turntable__play-btn--playing' : ''}`}
+            className="vw-player-controls__primary"
+            type="button"
             onClick={onPlayPause}
+            disabled={!hasTrack}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? '❚❚' : '▶'}
+            {isPlaying ? 'Ⅱ' : '▶'}
+          </button>
+        )}
+        {onNext && (
+          <button
+            className="vw-player-controls__secondary"
+            type="button"
+            onClick={onNext}
+            disabled={!hasTrack}
+            aria-label="Next track"
+          >
+            ››
           </button>
         )}
       </div>
-    </div>
+    </section>
   );
 };

@@ -1,169 +1,110 @@
-/* MiniPlayer Component - Modern Dark */
+/* Compact, persistent transport for the Library screen */
 .vw-mini-player {
   position: fixed;
-  bottom: 0;
-  left: 0;
   right: 0;
-  height: 60px;
-  background: var(--vw-bg-card);
-  border-top: 1px solid var(--vw-silver);
-  padding: 0 1rem;
+  bottom: 0;
+  left: 240px;
+  z-index: 950;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  z-index: 1000;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.vw-mini-player:hover {
-  height: 180px;
-}
-
-.vw-mini-player--expanded {
-  height: 180px;
+  gap: 0.85rem;
+  height: 76px;
+  padding: 0 1.25rem;
+  border-top: 1px solid rgba(211, 170, 112, 0.28);
+  background: linear-gradient(110deg, #2b2118, #1d1812 65%);
+  box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.22);
 }
 
 .vw-mini-player__placeholder {
   flex: 1;
+  color: var(--vw-text-secondary);
+  font-family: Georgia, 'Times New Roman', serif;
   text-align: center;
-  color: var(--vw-text-disabled);
 }
 
 .vw-mini-player__cover {
   width: 48px;
   height: 48px;
-  border-radius: 4px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(225, 184, 121, 0.28);
+  border-radius: 5px;
+  background-color: #5b4027;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background: linear-gradient(45deg, #ff0000, #cc0000);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
-  transition: all 0.3s;
-}
-
-.vw-mini-player:hover .vw-mini-player__cover,
-.vw-mini-player--expanded .vw-mini-player__cover {
-  width: 120px;
-  height: 120px;
-  box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.34);
 }
 
 .vw-mini-player__info {
-  flex: 1;
   display: flex;
+  flex: 1 1 200px;
+  min-width: 0;
   flex-direction: column;
   justify-content: center;
-  min-width: 0;
-  transition: all 0.3s;
-  opacity: 1;
-  max-height: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vw-mini-player:hover .vw-mini-player__info,
-.vw-mini-player--expanded .vw-mini-player__info {
-  opacity: 1;
-  max-height: 100px;
 }
 
 .vw-mini-player__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--vw-text-primary);
-  margin: 0;
-  white-space: nowrap;
   overflow: hidden;
+  margin: 0;
+  color: var(--vw-text-primary);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.92rem;
   text-overflow: ellipsis;
-  transition: all 0.3s;
-}
-
-.vw-mini-player:hover .vw-mini-player__title,
-.vw-mini-player--expanded .vw-mini-player__title {
-  opacity: 1;
+  white-space: nowrap;
 }
 
 .vw-mini-player__artist {
-  font-size: 0.75rem;
+  overflow: hidden;
+  margin: 0.22rem 0 0;
   color: var(--vw-text-secondary);
-  margin: 0;
-  transition: all 0.3s;
-}
-
-.vw-mini-player:hover .vw-mini-player__artist,
-.vw-mini-player--expanded .vw-mini-player__artist {
-  opacity: 1;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vw-mini-player__controls {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s;
-  opacity: 1;
-  transform: translateY(0);
+  gap: 0.35rem;
 }
 
-.vw-mini-player:hover .vw-mini-player__controls,
-.vw-mini-player--expanded .vw-mini-player__controls {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@supports not (display: flex) {
-  .vw-mini-player__controls {
-    opacity: 1;
-  }
-}
-
-.vw-mini-player__btn {
-  width: 24px;
-  height: 24px;
-  border: none;
+.vw-mini-player__btn,
+.vw-mini-player__play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 50%;
   background: transparent;
   color: var(--vw-text-secondary);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
 }
 
 .vw-mini-player__btn:hover {
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
-  transform: scale(1.1);
+  border-color: rgba(226, 173, 99, 0.35);
+  background: rgba(226, 173, 99, 0.1);
+  color: var(--vw-amber-primary);
 }
 
 .vw-mini-player__btn--active {
-  background: var(--vw-amber-primary);
-  color: var(--vw-bg-primary);
+  color: var(--vw-amber-primary);
 }
 
 .vw-mini-player__play {
-  width: 32px;
-  height: 32px;
-  border: none;
+  width: 42px;
+  height: 42px;
+  border-color: rgba(245, 202, 130, 0.55);
   background: var(--vw-gradient-amber);
-  color: var(--vw-bg-primary);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+  color: #26190e;
 }
 
 .vw-mini-player__play:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
-}
-
-.vw-mini-player__play--playing {
-  background: var(--vw-amber-primary);
+  transform: scale(1.05);
 }
 
 .vw-mini-player__icon {
@@ -174,4 +115,38 @@
 
 .vw-mini-player__icon svg {
   color: currentColor;
+}
+
+@media (max-width: 768px) {
+  .vw-mini-player {
+    left: 60px;
+    height: 68px;
+    gap: 0.55rem;
+    padding: 0 0.55rem;
+  }
+
+  .vw-mini-player__cover {
+    width: 40px;
+    height: 40px;
+  }
+
+  .vw-mini-player__controls {
+    gap: 0.12rem;
+  }
+
+  .vw-mini-player__btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vw-mini-player__shuffle,
+  .vw-mini-player__repeat {
+    display: none;
+  }
+
+  .vw-mini-player__info {
+    flex-basis: 90px;
+  }
 }

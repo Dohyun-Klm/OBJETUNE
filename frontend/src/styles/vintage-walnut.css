@@ -1,44 +1,44 @@
 /*
  * Objetune Design System
- * Modern Dark Mode with Red Accent
- * Virtual Vinyl inspired aesthetic
+ * Vintage Walnut room palette
+ * Minimal, record-forward player surfaces
  */
 
 /* 색상 토큰 */
 :root {
-  /* 베이스 컬러 - Modern Dark */
-  --vw-bg-primary: #0a0a0a;       /* 다크 모드 배경 */
-  --vw-bg-secondary: #121212;     /* 다크 카드 */
-  --vw-bg-card: #1a1a1a;          /* 카드 배경 */
-  --vw-bg-accent: #ff0000;        /* 레드 애센트 */
+  /* 따뜻한 레코드샵 배경 */
+  --vw-bg-primary: #19140f;
+  --vw-bg-secondary: #2d241a;
+  --vw-bg-card: #33271c;
+  --vw-bg-accent: #d69a50;
   
-  /* 월넛 우드 (사용하지 않음, 다크 모드로 대체) */
-  --vw-wood-primary: #8b6d47;
-  --vw-wood-dark: #6b4f2e;
-  --vw-wood-light: #a88a6b;
+  /* 월넛 우드 */
+  --vw-wood-primary: #80512f;
+  --vw-wood-dark: #422b1b;
+  --vw-wood-light: #bd8750;
   
   /* 텍스트 */
-  --vw-text-primary: #ffffff;     /* 흰색 텍스트 */
-  --vw-text-secondary: #b0b0b0;   /* 회색 텍스트 */
-  --vw-text-disabled: #666666;    /* 회색 텍스트 */
+  --vw-text-primary: #f4ead9;
+  --vw-text-secondary: #c1ae92;
+  --vw-text-disabled: #83725c;
   
-  /* 레드 애센트 */
-  --vw-amber-primary: #ff0000;    /* 레드 */
-  --vw-amber-dark: #cc0000;       /* 어두운 레드 */
+  /* 앰버 조명 */
+  --vw-amber-primary: #e2ad63;
+  --vw-amber-dark: #a56c35;
   
   /* 브랙 */
   --vw-black-primary: #000000;
   --vw-black-dark: #000000;
   
   /* 실버 */
-  --vw-silver: #333333;
+  --vw-silver: #5a4835;
   
   /* 다크 배경 */
-  --vw-amber-bg: #1a1a1a;
+  --vw-amber-bg: #3b2b1c;
   
   /* 그라데이션 */
-  --vw-gradient-walnut: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
-  --vw-gradient-amber: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  --vw-gradient-walnut: linear-gradient(135deg, #925d34 0%, #422b1b 100%);
+  --vw-gradient-amber: linear-gradient(135deg, #f0c47a 0%, #bd7938 100%);
 }
 
 /* 레이아웃 기본 */
@@ -47,7 +47,9 @@
   flex-direction: column;
   height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--vw-bg-primary);
+  background:
+    radial-gradient(ellipse at 74% 3%, rgba(224, 171, 99, 0.12), transparent 35%),
+    linear-gradient(135deg, #211911, var(--vw-bg-primary) 58%, #120f0c);
   color: var(--vw-text-primary);
   overflow: hidden;
 }
@@ -213,7 +215,7 @@
 
 .vw-music-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.2);
+  box-shadow: 0 6px 20px rgba(224, 171, 99, 0.2);
   border-color: var(--vw-amber-primary);
 }
 
@@ -221,7 +223,7 @@
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  background: linear-gradient(45deg, #ff0000, #cc0000);
+  background: var(--vw-gradient-walnut);
 }
 
 .vw-music-card__info {
@@ -363,8 +365,8 @@
   width: 48px;
   height: 48px;
   border-radius: 4px;
-  background: linear-gradient(45deg, #ff0000, #cc0000);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+  background: var(--vw-gradient-walnut);
+  box-shadow: 0 0 15px rgba(224, 171, 99, 0.2);
 }
 
 .vw-mini-player__info {
@@ -442,16 +444,16 @@
   justify-content: center;
   transition: all 0.2s ease;
   box-shadow: 
-    0 4px 16px rgba(255, 0, 0, 0.4),
-    0 0 20px rgba(255, 0, 0, 0.2);
+    0 4px 16px rgba(224, 171, 99, 0.4),
+    0 0 20px rgba(224, 171, 99, 0.2);
   z-index: 2;
 }
 
 .vw-mini-player__play:hover {
   transform: scale(1.1);
   box-shadow: 
-    0 6px 20px rgba(255, 0, 0, 0.6),
-    0 0 30px rgba(255, 0, 0, 0.4);
+    0 6px 20px rgba(224, 171, 99, 0.6),
+    0 0 30px rgba(224, 171, 99, 0.4);
 }
 
 /* 버튼 */
@@ -468,13 +470,13 @@
   transition: all 0.2s ease;
   background: var(--vw-amber-primary);
   color: var(--vw-bg-primary);
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(224, 171, 99, 0.2);
 }
 
 .vw-btn:hover {
   background: var(--vw-amber-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(224, 171, 99, 0.3);
 }
 
 .vw-btn--secondary {
@@ -631,319 +633,4 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* ============================================
-   턴테이블 (LP Player) 컴포넌트
-   ============================================ */
-
-/* 턴테이블 컨테이너 */
-.vw-turntable {
-  position: relative;
-  width: 560px;
-  max-width: 90vw;
-  aspect-ratio: 1;
-  margin: 2rem auto;
-  background: var(--vw-gradient-amber);
-  border: 4px solid var(--vw-amber-dark);
-  border-radius: 50%;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.4),
-    inset 0 0 30px rgba(255, 0, 0, 0.1);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 턴테이블 본체 - 다크 모드 */
-.vw-turntable__body {
-  position: absolute;
-  width: 90%;
-  height: 90%;
-  background: 
-    linear-gradient(135deg, 
-      #000000 0%, 
-      #111111 35%, 
-      #000000 70%, 
-      #000000 100%
-    ),
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 20%),
-    radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 20%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* LP 원판 - 다크 모드 */
-.vw-vinyl {
-  position: relative;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, 
-    #0a0a0a 0%, 
-    #000000 100%
-  );
-  border: 3px solid #444444;
-  border-top: 3px solid #ff0000;
-  box-shadow: 
-    0 0 25px rgba(0, 0, 0, 0.6),
-    inset 0 0 8px rgba(0, 0, 0, 0.5);
-  animation: vw-spinVinyl 100s linear infinite;
-  transform-origin: center;
-}
-
-/* 회전 중일 때 LP 회전 애니메이션 */
-.vw-vinyl--playing {
-  animation-play-state: running;
-}
-
-/* 일시정지/정지 시 회전 중지 */
-.vw-vinyl--paused,
-.vw-vinyl--stopped {
-  animation-play-state: paused;
-}
-
-/* HP (Hunting Lamp) 조명 - 레드 */
-.vw-hp-light {
-  position: absolute;
-  width: 40px;
-  height: 80px;
-  background: linear-gradient(to bottom, 
-    rgba(255, 0, 0, 0.8) 0%, 
-    rgba(204, 0, 0, 0.6) 50%, 
-    rgba(255, 0, 0, 0.2) 100%
-  );
-  border-radius: 50% 50% 0 0;
-  filter: blur(3px);
-  box-shadow: 0 0 25px #ff0000;
-  animation: vw-hpPulse 2s ease-in-out infinite;
-  z-index: 2;
-}
-
-/* LP 레코드 홈 (Center Hole) */
-.vw-vinyl__hub {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #2a2a2a;
-  border-radius: 50%;
-  border: 2px solid #444444;
-  z-index: 3;
-}
-
-/* LP 라벨 (Dynamic Vinyl Label) */
-.vw-vinyl__label {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 2px solid var(--vw-amber-dark);
-  background: var(--vw-bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  z-index: 2;
-}
-
-/* 라벨에 아트워크가 있는 경우 */
-.vw-vinyl__label--artwork {
-  background: #000000;
-  border-color: var(--vw-amber-primary);
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
-}
-
-.vw-vinyl__label__artwork-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-/* 기본 OBJETUNE 라벨 */
-.vw-vinyl__label__default {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  font-size: 10px;
-  text-align: center;
-  color: var(--vw-text-secondary);
-}
-
-.vw-vinyl__label__default-text {
-  font-weight: 700;
-  color: var(--vw-amber-primary);
-}
-
-/* 톤암 - 메탈리크 스타일 */
-.vw-tonearm {
-  position: absolute;
-  width: 180px;
-  height: 40px;
-  top: 15%;
-  right: 15%;
-  background: linear-gradient(to right, 
-    #444444 0%, 
-    #666666 100%
-  );
-  border-radius: 20px 0 0 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-  transform: rotate(25deg);
-  transform-origin: left center;
-  z-index: 4;
-  border: 1px solid #333333;
-}
-
-.vw-tonearm::before {
-  content: '';
-  position: absolute;
-  right: -10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 30px;
-  height: 8px;
-  background: #2a2a2a;
-  border-radius: 4px;
-  border: 1px solid #444444;
-}
-
-/* 톤젤 (Tonearm Head) - 레드 포인트 */
-.vw-tonearm__head {
-  position: absolute;
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  background: #1a1a1a;
-  border-radius: 50%;
-  border: 2px solid var(--vw-amber-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-.vw-tonearm__head::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: var(--vw-amber-primary);
-  border-radius: 50%;
-  box-shadow: 0 0 12px #ff0000;
-}
-
-/* 톤암 피벗 (Pivot) */
-.vw-tonearm__pivot {
-  position: absolute;
-  left: -15px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  background: #2a2a2a;
-  border: 2px solid #444444;
-  border-radius: 50%;
-  z-index: 6;
-}
-
-/* 재생/일시정지 버튼 - 레드 */
-.vw-turntable__play-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: none;
-  background: var(--vw-gradient-amber);
-  color: #ffffff;
-  font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 
-    0 4px 16px rgba(255, 0, 0, 0.4),
-    0 0 20px rgba(255, 0, 0, 0.2);
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.vw-turntable__play-btn:hover {
-  transform: translateX(-50%) scale(1.1);
-  box-shadow: 
-    0 6px 20px rgba(255, 0, 0, 0.6),
-    0 0 30px rgba(255, 0, 0, 0.3);
-}
-
-.vw-turntable__play-btn--playing::after {
-  content: '❚❚';
-}
-
-/* 애니메이션 키프레임 */
-@keyframes vw-spinVinyl {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes vw-hpPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-/* 턴테이블 크기 조절 */
-@media (max-width: 768px) {
-  .vw-turntable {
-    width: 400px;
-    max-width: 85vw;
-  }
-  
-  .vw-vinyl {
-    width: 336px;
-    height: 336px;
-  }
-  
-  .vw-turntable__body {
-    width: 88%;
-    height: 88%;
-  }
-  
-  .vw-tonearm {
-    width: 140px;
-    height: 32px;
-    top: 15%;
-    right: 15%;
-  }
-}
-
-/* 턴테이블 모드 컨테이너 */
-.vw-turntable-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-  gap: 1.5rem;
-}
-
-.vw-turntable-settings {
-  position: relative;
-  max-width: 560px;
-}
-
-/* 라이브러리 모드와 턴테이블 모드 구분 */
-.vw-turntable--mode {
-  margin-top: 2rem;
 }

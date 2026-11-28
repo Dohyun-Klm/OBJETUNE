@@ -183,11 +183,49 @@ async fn main() {
 
     // 서버 시작 (기본 8080 포트, 환경변수로 재설정 가능)
     let port = env::var("API_PORT").unwrap_or_else(|_| "8080".to_string());
-    let addr = SocketAddr::from(([0, 0, 0, 0], port.parse().unwrap_or(8080)));
+    let addr = SocketAddr::from(([127, 0, 0, 1], port.parse().unwrap_or(8080)));
     
     tracing::info!("OBJETUNE API Server starting on {}", addr);
     
     axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
         .await
         .unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{YouTubeSearchCache, YouTubeSearchResult, YouTubeVideo};
+
+    fn sample_result() -> YouTubeSearchResult {
+        YouTubeSearchResult {
+            results: vec![YouTubeVideo {
+                video_id: "sample-id".to_string(),
+                title: "Sample Track".to_string(),
+                channel_title: "Sample Artist".to_string(),
+                thumbnail: String::new(),
+                video_url: "https://www.youtube.com/watch?v=sample-id".to_string(),
+                duration_seconds: Some(180),
+                published_at: String::new(),
+                view_count: None,
+            }],
+            total_results: 1,
+        }
+    }
+
+    #[test]
+    fn cache_returns_matching_result_and_separates_limits() {
+        let cache = YouTubeSearchCache::new(30);
+        cache.set("Sample", 1, sample_result());
+
+        assert_eq!(cache.get("sample", 1).unwrap().total_results, 1);
+        assert!(cache.get("sample", 2).is_none());
+    }
+
+    #[test]
+    fn cache_expires_results_after_ttl() {
+        let cache = YouTubeSearchCache::new(0);
+        cache.set("sample", 1, sample_result());
+
+        assert!(cache.get("sample", 1).is_none());
+    }
 }

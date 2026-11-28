@@ -258,7 +258,6 @@ mod tests {
     use super::*;
     use std::env;
     use std::fs;
-    use std::path::PathBuf;
 
     #[test]
     fn test_track_id_generation() {

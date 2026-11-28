@@ -26,30 +26,43 @@ fn default_limit() -> u32 { 10 }
 /// ISO 8601 지속 시간 파싱 (PT1H2M3S 형식 -> 초)
 fn parse_iso_duration(duration: &str) -> Option<u32> {
     let duration = duration.strip_prefix('P')?;
-    
     let mut total: u32 = 0;
-    let mut chars = duration.chars().peekable();
-    
-    while let Some(c) = chars.next() {
-        match c {
-            'T' => continue,
-            'H' => {
-                let num: u32 = chars.by_ref().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok()?;
-                total += num * 3600;
+    let mut component = String::new();
+    let mut in_time = false;
+    let mut components_seen = 0;
+
+    for character in duration.chars() {
+        if character == 'T' {
+            if in_time {
+                return None;
             }
-            'M' => {
-                let num: u32 = chars.by_ref().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok()?;
-                total += num * 60;
-            }
-            'S' => {
-                let num: u32 = chars.by_ref().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok()?;
-                total += num;
-            }
-            _ => {}
+            in_time = true;
+            continue;
         }
+
+        if character.is_ascii_digit() {
+            component.push(character);
+            continue;
+        }
+
+        let amount = component.parse::<u32>().ok()?;
+        component.clear();
+        let multiplier = match (in_time, character) {
+            (false, 'D') => 86_400,
+            (true, 'H') => 3_600,
+            (true, 'M') => 60,
+            (true, 'S') => 1,
+            _ => return None,
+        };
+        total = total.checked_add(amount.checked_mul(multiplier)?)?;
+        components_seen += 1;
     }
-    
-    Some(total)
+
+    if !component.is_empty() || components_seen == 0 {
+        None
+    } else {
+        Some(total)
+    }
 }
 
 /// YouTube 데이터 API v3 클라이언트
@@ -354,5 +367,23 @@ pub async fn get_video(
                 ))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_iso_duration;
+
+    #[test]
+    fn parses_youtube_iso_durations() {
+        assert_eq!(parse_iso_duration("PT3M4S"), Some(184));
+        assert_eq!(parse_iso_duration("PT1H2M3S"), Some(3723));
+        assert_eq!(parse_iso_duration("PT45S"), Some(45));
+    }
+
+    #[test]
+    fn rejects_malformed_durations() {
+        assert_eq!(parse_iso_duration("3 minutes"), None);
+        assert_eq!(parse_iso_duration("PTinvalidS"), None);
     }
 }

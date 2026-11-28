@@ -7,10 +7,13 @@
   ],
   "scripts": {
     "dev": "npm run --prefix frontend start",
+    "dev:server": "cargo run --manifest-path server/Cargo.toml",
     "build": "npm run --prefix frontend build",
+    "build:api:dev": "cargo build --manifest-path server/Cargo.toml",
+    "build:api:release": "cargo build --release --manifest-path server/Cargo.toml",
     "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "tauri:dev": "npm run build:api:dev && tauri dev",
+    "tauri:build": "npm run build:api:release && tauri build",
     "tauri:clean": "tauri clean",
     "test": "npm test --prefix frontend"
   }

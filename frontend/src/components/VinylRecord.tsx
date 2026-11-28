@@ -5,6 +5,7 @@ interface VinylRecordProps {
   track: Track | null;
   isPlaying: boolean;
   coverArtUrl?: string;
+  dynamicLabel?: boolean;
   className?: string;
 }
 
@@ -12,9 +13,11 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
   track,
   isPlaying,
   coverArtUrl,
+  dynamicLabel = false,
   className = '',
 }) => {
   const [rotation, setRotation] = useState(0);
+  const rotationRef = useRef(0);
   const [displayedCoverArt, setDisplayedCoverArt] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const animationRef = useRef<number | null>(null);
@@ -47,11 +50,13 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
 
     if (isPlaying && !prefersReducedMotion) {
       const startTime = performance.now();
+      const startingRotation = rotationRef.current;
       const rpm = 33.3; // 레코드 회전 속도 (레코드 표준 33⅓ RPM)
       
       const animate = (currentTime: number) => {
         const elapsed = (currentTime - startTime) / 1000; // 초
-        const degrees = (elapsed * rpm * 6) % 360; // RPM을 도/분으로 변환
+        const degrees = (startingRotation + elapsed * rpm * 6) % 360; // RPM을 도/분으로 변환
+        rotationRef.current = degrees;
         setRotation(degrees);
         animationRef.current = requestAnimationFrame(animate);
       };
@@ -59,7 +64,7 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
       animationRef.current = requestAnimationFrame(animate);
     } else {
       // 일시정지/정지 시 회전 유지 (다음 재생 시 시작)
-      setRotation(prev => prev);
+      setRotation(rotationRef.current);
     }
 
     return () => {
@@ -76,7 +81,6 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
     <div 
       className={`vw-vinyl ${className}`}
       style={{ 
-        animationPlayState: isPlaying ? 'running' : 'paused',
         transform: `rotate(${rotation}deg)`
       }}
       role="img"
@@ -94,9 +98,11 @@ export const VinylRecord: React.FC<VinylRecordProps> = ({
           />
         ) : (
           <div className="vw-vinyl__label__default">
-            <div className="vw-vinyl__label__default-text">OBJETUNE</div>
-            <div className="vw-vinyl__label__default-text" style={{ fontSize: '8px', opacity: 0.7 }}>
-              {isPlaying ? 'PLAYING' : 'PAUSED'}
+            <div className="vw-vinyl__label__default-text">
+              {dynamicLabel && track ? track.title : 'OBJETUNE'}
+            </div>
+            <div className="vw-vinyl__label__default-text vw-vinyl__label__artist">
+              {dynamicLabel && track ? track.artist : (isPlaying ? 'PLAYING' : 'PAUSED')}
             </div>
           </div>
         )}

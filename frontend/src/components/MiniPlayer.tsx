@@ -82,8 +82,6 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   onQueueToggle,
   className = '',
 }) => {
-  const [isExpanded, setIsExpanded] = React.useState(false);
-
   if (!nowPlaying) {
     return (
       <div className={`vw-mini-player ${className}`} role="region" aria-label="Mini player">
@@ -98,16 +96,11 @@ export const MiniPlayer: React.FC<MiniPlayerProps> = ({
   const repeat = nowPlaying.repeat ?? 'off';
   const isPlaying = nowPlaying.isPlaying;
 
-  const handleExpand = () => {
-    setIsExpanded(true);
-  };
-
   return (
     <div 
-      className={`vw-mini-player ${className} ${isExpanded ? 'vw-mini-player--expanded' : ''}`}
+      className={`vw-mini-player ${className}`}
       role="region" 
       aria-label="Mini player"
-      onClick={handleExpand}
     >
       <div 
         className="vw-mini-player__cover"

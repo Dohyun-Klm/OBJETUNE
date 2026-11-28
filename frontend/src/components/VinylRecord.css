@@ -1,214 +1,193 @@
-/* VinylRecord Component Styles */
-
+/* LP surface, label, tonearm, and platter details */
 .vw-vinyl {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: min(84%, 430px);
+  height: auto;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 50%;
-  background: 
-    radial-gradient(ellipse at center, #2a1a0f 0%, #1d1107 70%, #0f0a03 100%),
-    conic-gradient(from 0deg at center, #5a4736 0deg 180deg, #4a3a2a 180deg 360deg);
-  box-shadow: 
-    inset 0 0 20px rgba(0, 0, 0, 0.6),
-    0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  background:
+    repeating-radial-gradient(circle at center, transparent 0 7px, rgba(255, 255, 255, 0.08) 8px, transparent 9px 13px),
+    radial-gradient(circle at center, #24211e 0 16%, #11100f 17% 52%, #211e1b 53% 54%, #0b0b0a 55% 100%);
+  box-shadow:
+    inset 0 0 35px rgba(0, 0, 0, 0.9),
+    0 18px 35px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(245, 208, 151, 0.12);
   overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .vw-vinyl::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120%;
-  height: 120%;
+  inset: 5%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
-  background: 
-    radial-gradient(circle, 
-      rgba(255, 255, 255, 0.05) 0%, 
-      rgba(255, 255, 255, 0) 30%, 
-      rgba(0, 0, 0, 0) 70%);
-  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.1), transparent 40%);
   pointer-events: none;
   z-index: 8;
 }
 
-.vw-vinyl:hover {
-  transform: scale(1.03);
-}
-
-/* LP 라벨 - 중앙 원형 영역 */
 .vw-vinyl__label {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 70px;
-  height: 70px;
+  width: clamp(70px, 23%, 112px);
+  aspect-ratio: 1;
+  border: 2px solid rgba(74, 46, 25, 0.65);
   border-radius: 50%;
-  background: 
-    radial-gradient(circle, 
-      #c9a86a 0%, 
-      #b8945a 40%, 
-      #a6824e 100%);
+  background: radial-gradient(circle, #f0cb82 0%, #dca453 76%, #b97936 100%);
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   z-index: 10;
-  box-shadow: 
-    inset 0 0 10px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: rgba(255, 255, 255, 0.4);
-  border-bottom-color: rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 10px rgba(48, 30, 16, 0.35), 0 2px 9px rgba(0, 0, 0, 0.45);
   pointer-events: none;
 }
 
-/* 아트워크가 있는 경우 라벨 */
 .vw-vinyl__label--artwork {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #000;
+  background: #17130e;
 }
 
 .vw-vinyl__label__artwork-img {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
-  box-shadow: 
-    inset 0 0 10px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-/* 기본 라벨 디자인 */
 .vw-vinyl__label__default {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  width: 82%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  color: #50371f;
+  font-family: Georgia, 'Times New Roman', serif;
   text-align: center;
-  color: #8b7355;
-  font-family: 'Arial', sans-serif;
-  font-weight: 400;
   pointer-events: none;
 }
 
 .vw-vinyl__label__default-text {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #c9a86a;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  overflow: hidden;
+  color: #50371f;
+  font-size: clamp(0.38rem, 1.2vw, 0.62rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 레코드 스크류 (곡선상의 작은 흠집 표시) */
-.vw-vinyl::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 60%;
-  height: 60%;
-  border-radius: 50% 50% 0 0;
-  background: 
-    radial-gradient(ellipse at center, 
-      rgba(139, 115, 85, 0.3) 0%, 
-      rgba(139, 115, 85, 0.1) 50%, 
-      transparent 70%);
-  transform: translate(-50%, -50%) rotate(0.5deg);
-  pointer-events: none;
-  z-index: 2;
+.vw-vinyl__label__artist {
+  opacity: 0.72;
+  font-size: clamp(0.32rem, 0.9vw, 0.46rem);
+  font-weight: 500;
 }
 
-/* 레코드의 격자 무늬 (LP 질감) */
 .vw-vinyl__groove {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 90px;
-  height: 90px;
+  inset: 15%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 50%;
-  background: 
-    conic-gradient(
-      from 0deg at center,
-      transparent 0deg 179deg,
-      rgba(100, 85, 60, 0.3) 179deg 181deg,
-      transparent 181deg 360deg
-    );
-  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 3;
 }
 
-/* 톤암 */
 .vw-tonearm {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 50px;
-  height: 120px;
-  background: 
-    linear-gradient(90deg, 
-      #3a3a3a 0%, 
-      #5a5a5a 30%, 
-      #3a3a3a 100%);
-  border-radius: 3px;
-  transform-origin: center left;
-  transform: rotate(25deg);
+  top: 11%;
+  right: 15%;
+  width: 34%;
+  height: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.44);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #d5d0c8 0%, #77716a 48%, #d3cec5 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  transform: rotate(-28deg);
+  transform-origin: 8% 50%;
+  transition: transform 700ms cubic-bezier(0.2, 0.75, 0.25, 1);
   z-index: 15;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   pointer-events: none;
+}
+
+.vw-turntable[data-playback-state='playing'] .vw-tonearm {
+  transform: rotate(-15deg);
 }
 
 .vw-tonearm__pivot {
   position: absolute;
-  bottom: -10px;
-  left: 5px;
-  width: 12px;
-  height: 12px;
-  background: #2a2a2a;
+  left: -5px;
+  top: 50%;
+  width: 20px;
+  aspect-ratio: 1;
+  border: 2px solid #8e8981;
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle, #d4cfc6 0 23%, #56514a 27% 100%);
+  transform: translateY(-50%);
 }
 
 .vw-tonearm__head {
   position: absolute;
-  top: 5px;
-  right: -8px;
-  width: 20px;
-  height: 12px;
-  background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  right: -4px;
+  top: 50%;
+  width: 22px;
+  height: 15px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #d6b16b, #4f4940);
+  transform: translateY(-50%) rotate(12deg);
 }
 
-/* HP (Hunting Lamp) 조명 효과 */
+.vw-tonearm__head::after {
+  content: '';
+  position: absolute;
+  left: 45%;
+  bottom: -8px;
+  width: 2px;
+  height: 10px;
+  background: #ded8cc;
+}
+
 .vw-hp-light {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, #ffd700 0%, #ffa500 70%, transparent 100%);
+  top: 16%;
+  left: 13%;
+  width: 9px;
+  aspect-ratio: 1;
   border-radius: 50%;
-  box-shadow: 0 0 12px 4px rgba(255, 165, 0, 0.4);
-  z-index: 14;
+  background: #ffcf75;
+  box-shadow: 0 0 15px 5px rgba(255, 187, 87, 0.3);
   pointer-events: none;
+  z-index: 14;
 }
 
-/* 재생 중일 때 LP 스핀 효과 */
-.vw-vinyl[data-playing="true"] {
-  animation-play-state: running;
+@media (max-width: 640px) {
+  .vw-vinyl {
+    width: 82%;
+  }
+
+  .vw-tonearm {
+    height: 7px;
+  }
+
+  .vw-tonearm__pivot {
+    width: 15px;
+  }
+
+  .vw-tonearm__head {
+    width: 18px;
+    height: 12px;
+  }
 }
 
-.vw-vinyl[data-playing="false"] {
-  animation-play-state: paused;
+@media (prefers-reduced-motion: reduce) {
+  .vw-tonearm {
+    transition-duration: 0.01ms;
+  }
 }

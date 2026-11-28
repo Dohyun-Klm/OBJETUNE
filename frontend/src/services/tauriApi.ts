@@ -34,6 +34,8 @@ type PlaylistResponse = {
   is_favorite: boolean;
 };
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8080';
+
 // Tauri API 사용 가능 여부 캐시 (테스트용으로 리셋 가능)
 // 테스트 환경에서는 null로 초기화하여 캐시를 사용하지 않도록 함
 let isTauriAvailable: boolean | null = null;
@@ -128,26 +130,6 @@ export async function createTrack(track: Partial<Track> & Pick<Track, 'platform'
     console.error('Failed to create track:', error);
     return null;
   }
-}
-
-// Helper function to convert Tauri TrackResponse to frontend Track
-function mapTrackResponse(response: any): Track {
-  return {
-    id: response.id,
-    platform: response.platform as any,
-    platformId: response.platform_id,
-    title: response.title,
-    artist: response.artist,
-    album: response.album || '',
-    duration: response.duration,
-    thumbnail: response.thumbnail || '',
-    url: response.url || '',
-    embedUrl: response.embed_url,
-    isPlayable: true,
-    addedAt: new Date(response.added_at * 1000).toISOString(),
-    isFavorite: response.is_favorite,
-    coverArtUrl: response.cover_art_url || undefined,
-  };
 }
 
 export async function getAllTracks(): Promise<Track[]> {
@@ -992,73 +974,47 @@ export async function searchYouTubeTracks(query: string, limit?: number): Promis
     ).slice(0, limit || 10);
   }
   
-  try {
-    const response = await invoke<Array<TrackResponse>>('search_youtube', { query, limit });
-
-    // Ensure response is an array before mapping
-    if (!Array.isArray(response)) {
-      return [];
-    }
-
-    return response.map(t => ({
-      id: t.id,
-      platform: t.platform as any,
-      platformId: t.platform_id,
-      title: t.title,
-      artist: t.artist,
-      album: t.album || '',
-      duration: t.duration,
-      thumbnail: t.thumbnail || '',
-      url: t.url || '',
-      embedUrl: t.embed_url,
-      isPlayable: true,
-      addedAt: new Date(t.added_at * 1000).toISOString(),
-      isFavorite: t.is_favorite,
-      coverArtUrl: t.cover_art_url || undefined,
-    }));
-  } catch (error) {
-    console.error('Failed to search YouTube:', error);
-    return [];
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/youtube/search?q=${encodeURIComponent(query)}&limit=${limit || 10}`
+  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message || `YouTube 검색 실패 (${response.status})`);
   }
+
+  const data: {
+    results: Array<{
+      video_id: string;
+      title: string;
+      channel_title: string;
+      thumbnail: string;
+      video_url: string;
+      duration_seconds?: number | null;
+    }>;
+  } = await response.json();
+
+  return (Array.isArray(data.results) ? data.results : []).map(video => ({
+    id: `youtube-${video.video_id}`,
+    platform: 'youtube',
+    platformId: video.video_id,
+    title: video.title,
+    artist: video.channel_title,
+    album: '',
+    duration: video.duration_seconds || 0,
+    thumbnail: video.thumbnail,
+    url: video.video_url,
+    embedUrl: `https://www.youtube.com/embed/${video.video_id}`,
+    isPlayable: true,
+    addedAt: new Date().toISOString(),
+    isFavorite: false,
+    coverArtUrl: video.thumbnail,
+  }));
 }
 
 export async function searchSoundCloudTracks(query: string, limit?: number): Promise<Track[]> {
-  if (!(await checkTauri())) {
-    return [];
-  }
-
-  // Test environment fallback
-  if (isInTestEnvironment()) {
-    return [];
-  }
-  
-  try {
-    const response = await invoke<Array<TrackResponse>>('search_soundcloud', { query, limit });
-
-    if (!Array.isArray(response)) {
-      return [];
-    }
-
-    return response.map(t => ({
-      id: t.id,
-      platform: t.platform as any,
-      platformId: t.platform_id,
-      title: t.title,
-      artist: t.artist,
-      album: t.album || '',
-      duration: t.duration,
-      thumbnail: t.thumbnail || '',
-      url: t.url || '',
-      embedUrl: t.embed_url,
-      isPlayable: true,
-      addedAt: new Date(t.added_at * 1000).toISOString(),
-      isFavorite: t.is_favorite,
-      coverArtUrl: t.cover_art_url || undefined,
-    }));
-  } catch (error) {
-    console.error('Failed to search SoundCloud:', error);
-    return [];
-  }
+  void query;
+  void limit;
+  return [];
 }
 
 export async function searchSoundCloudByUrl(url: string): Promise<PlatformSearchResult | null> {
@@ -1072,42 +1028,44 @@ export async function searchSoundCloudByUrl(url: string): Promise<PlatformSearch
   }
 
   try {
-    const response = await invoke<{
-      id: string;
-      platform: string;
-      platform_id: string;
-      title: string;
-      artist: string;
-      album: string | null;
-      duration: number;
-      thumbnail: string | null;
-      url: string;
-      embed_url: string;
-      cover_art_url: string | null;
-    }>('search_soundcloud_by_url', { url });
-
-    if (!response) {
-      return null;
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/soundcloud/track?url=${encodeURIComponent(url)}`
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || `SoundCloud URL 조회 실패 (${response.status})`);
     }
 
+    const track = await response.json() as {
+      id: string;
+      title: string;
+      description: string;
+      url: string;
+      embed_url: string;
+      artwork_url: string | null;
+      duration: number;
+    };
+
+    const artist = new URL(track.url).pathname.split('/').filter(Boolean)[0] || 'SoundCloud';
+
     return {
-      id: response.id,
-      platform: response.platform as any,
-      platformId: response.platform_id,
-      title: response.title,
-      artist: response.artist,
-      album: response.album || '',
-      duration: response.duration,
-      thumbnail: response.thumbnail || '',
-      url: response.url,
-      embedUrl: response.embed_url,
+      id: track.id,
+      platform: 'soundcloud',
+      platformId: track.id,
+      title: track.title,
+      artist,
+      album: track.description || '',
+      duration: Math.round(track.duration / 1000),
+      thumbnail: track.artwork_url || '',
+      url: track.url,
+      embedUrl: track.embed_url,
       isPlayable: true,
       addedAt: new Date().toISOString(),
       isFavorite: false,
-      coverArtUrl: response.cover_art_url || undefined,
+      coverArtUrl: track.artwork_url || undefined,
     };
   } catch (error) {
     console.error('Failed to search SoundCloud by URL:', error);
-    return null;
+    throw error;
   }
 }

@@ -692,12 +692,14 @@ function App() {
       <div className="vw-main">
         {/* 턴테이블 모드 뷰 */}
         {isTurntableMode && (
-          <div className="vw-turntable-container">
+          <>
             <Turntable
               nowPlaying={nowPlaying}
               playbackState={turntablePlaybackState}
               onPlayPause={handlePlayPause}
-              showPlayButton={false}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              dynamicLabel={turntableSettings.dynamicVinylLabel}
               className="vw-turntable--mode"
             />
             <Settings
@@ -705,7 +707,7 @@ function App() {
               onToggleDynamicVinylLabel={handleToggleDynamicVinylLabel}
               className="vw-turntable-settings"
             />
-          </div>
+          </>
         )}
         
         {/* 라이브러리 모드 뷰 */}
