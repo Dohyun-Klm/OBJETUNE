@@ -214,7 +214,7 @@ class PlayerManager implements PlayerManagerInterface {
       }
       
       const script = document.createElement('script');
-      script.src = 'https://w.soundcloud.com/player/widget.js';
+      script.src = 'https://w.soundcloud.com/player/api.js';
       script.onload = () => {
         this.soundcloudApiLoaded = true;
         resolve();

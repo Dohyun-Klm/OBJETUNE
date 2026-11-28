@@ -486,7 +486,7 @@ export async function loadSoundCloudAPI(): Promise<void> {
     }
     
     const script = document.createElement('script');
-    script.src = 'https://w.soundcloud.com/player/widget.js';
+    script.src = 'https://w.soundcloud.com/player/api.js';
     script.onload = () => resolve();
     script.onerror = () => reject(new Error('SoundCloud Widget API 로드 실패'));
     document.head.appendChild(script);
