@@ -102,56 +102,96 @@
 
 .vw-tonearm {
   position: absolute;
-  top: 11%;
-  right: 15%;
-  width: 34%;
-  height: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.44);
-  border-radius: 999px;
-  background: linear-gradient(180deg, #d5d0c8 0%, #77716a 48%, #d3cec5 100%);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
-  transform: rotate(-28deg);
-  transform-origin: 8% 50%;
-  transition: transform 700ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  top: 10%;
+  left: 88.5%;
+  width: 11%;
+  height: 58%;
+  transform-origin: 50% 0;
+  transition: transform 420ms ease-out;
+  filter: drop-shadow(2px 4px 3px #0009);
   z-index: 15;
   pointer-events: none;
 }
 
-.vw-turntable[data-playback-state='playing'] .vw-tonearm {
-  transform: rotate(-15deg);
+.vw-tonearm__assembly {
+  position: absolute;
+  inset: 0;
+}
+
+.vw-tonearm__assembly::before {
+  content: '';
+  position: absolute;
+  left: 24%;
+  top: -25%;
+  width: 52%;
+  height: 22%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #343638, #c9c9c3 25%, #f6f3e9 52%, #777b7d 80%, #343638);
 }
 
 .vw-tonearm__pivot {
   position: absolute;
-  left: -5px;
-  top: 50%;
-  width: 20px;
+  top: 0;
+  left: 50%;
+  width: 100%;
   aspect-ratio: 1;
-  border: 2px solid #8e8981;
+  border: 1px solid #777571;
   border-radius: 50%;
-  background: radial-gradient(circle, #d4cfc6 0 23%, #56514a 27% 100%);
-  transform: translateY(-50%);
+  background: radial-gradient(circle, #dddcd3 0 25%, #71706c 27% 33%, #c3c1b9 35% 50%, #252626 52% 74%, #41403d 76%);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.vw-tonearm__tube {
+  position: absolute;
+  top: 5%;
+  bottom: 15%;
+  left: 45%;
+  width: 13%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #545554, #e5e4dc 48%, #a4a8a7);
+  transform: skewX(5deg);
+}
+
+.vw-tonearm__tube::after {
+  content: '';
+  position: absolute;
+  inset: 70% -132% -8% auto;
+  width: 180%;
+  border-right: clamp(2px, 0.38vw, 5px) solid #d2d0c8;
+  border-radius: 0 25% 80% 0 / 0 44% 65% 0;
+  background: #212321;
 }
 
 .vw-tonearm__head {
   position: absolute;
-  right: -4px;
-  top: 50%;
-  width: 22px;
-  height: 15px;
-  border-radius: 3px;
-  background: linear-gradient(135deg, #d6b16b, #4f4940);
-  transform: translateY(-50%) rotate(12deg);
+  bottom: 0;
+  left: 50%;
+  width: 60%;
+  height: 22%;
+  border: 1px solid #6c6f69;
+  border-radius: 2px;
+  background: linear-gradient(110deg, #313431, #0d0f0e 72%);
+  transform: translateX(-50%) rotate(7deg);
+  transform-origin: 50% 100%;
+}
+
+.vw-tonearm__head::before {
+  content: '';
+  position: absolute;
+  inset: 12% 22% 36%;
+  border-radius: 1px;
+  background: repeating-linear-gradient(#d4d3cd 0 2px, #747872 2px 3px);
 }
 
 .vw-tonearm__head::after {
   content: '';
   position: absolute;
-  left: 45%;
-  bottom: -8px;
-  width: 2px;
-  height: 10px;
-  background: #ded8cc;
+  left: 42%;
+  bottom: -14%;
+  width: 16%;
+  height: 17%;
+  background: #d7b783;
 }
 
 .vw-hp-light {
@@ -172,18 +212,6 @@
     width: 82%;
   }
 
-  .vw-tonearm {
-    height: 7px;
-  }
-
-  .vw-tonearm__pivot {
-    width: 15px;
-  }
-
-  .vw-tonearm__head {
-    width: 18px;
-    height: 12px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,6 +5,7 @@ import { NowPlaying, PlaybackState } from '../types';
 interface TurntableProps {
   nowPlaying: NowPlaying | null;
   playbackState: PlaybackState;
+  progress?: number;
   onPlayPause: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
@@ -16,6 +17,7 @@ interface TurntableProps {
 export const Turntable: React.FC<TurntableProps> = ({
   nowPlaying,
   playbackState,
+  progress = 0,
   onPlayPause,
   onPrevious,
   onNext,
@@ -28,6 +30,9 @@ export const Turntable: React.FC<TurntableProps> = ({
   const hasTrack = Boolean(nowPlaying?.track?.id && nowPlaying.track.title);
   const track = nowPlaying?.track;
   const artwork = track?.coverArtUrl || track?.thumbnail;
+  const groovePosition = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
+  const isTracking = hasTrack && (isPlaying || playbackState === 'paused');
+  const tonearmAngle = isTracking ? 27 * groovePosition : -12;
 
   return (
     <section className={`vw-turntable-container ${className}`} aria-label="Turntable">
@@ -45,9 +50,12 @@ export const Turntable: React.FC<TurntableProps> = ({
               coverArtUrl={dynamicLabel ? nowPlaying?.track?.coverArtUrl : undefined}
               dynamicLabel={dynamicLabel}
             />
-            <div className="vw-tonearm" data-testid="tonearm" aria-hidden="true">
+            <div className="vw-tonearm" style={{ transform: `rotate(${tonearmAngle}deg)` }} data-testid="tonearm" aria-hidden="true">
               <div className="vw-tonearm__pivot" data-testid="tonearm-pivot" />
-              <div className="vw-tonearm__head" data-testid="tonearm-head" />
+              <div className="vw-tonearm__assembly">
+                <div className="vw-tonearm__tube" />
+                <div className="vw-tonearm__head" data-testid="tonearm-head" />
+              </div>
             </div>
             <div className="vw-hp-light" aria-hidden="true" data-testid="hp-light" />
           </div>

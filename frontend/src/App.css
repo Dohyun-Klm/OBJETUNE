@@ -40,13 +40,13 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(204, 165, 112, 0.24);
+  border-bottom: 1px solid var(--vw-border);
 }
 
 .vw-content__title {
   margin: 0;
   color: var(--vw-text-primary);
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--vw-heading-font);
   font-size: 1.75rem;
   font-weight: 500;
 }
@@ -56,8 +56,8 @@
   padding: 1rem;
   border: 1px solid var(--vw-amber-dark);
   border-radius: 10px;
-  background: rgba(224, 171, 99, 0.1);
-  color: #f0c47a;
+  background: var(--vw-amber-bg);
+  color: var(--vw-focus);
 }
 
 .vw-music-card--playlist .vw-music-card__image {

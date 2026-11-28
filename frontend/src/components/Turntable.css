@@ -9,14 +9,14 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem clamp(0.85rem, 3vw, 2rem);
-  background: #17120f;
-  border-bottom: 1px solid #473526;
+  background: var(--vw-bg-secondary);
+  border-bottom: 1px solid var(--vw-border);
 }
 
 .vw-turntable-toolbar__brand {
   margin-right: auto;
-  color: #f0c486;
-  font: 600 0.9rem Georgia, serif;
+  color: var(--vw-amber-primary);
+  font: 600 0.9rem var(--vw-heading-font);
   letter-spacing: 0.12em;
 }
 
@@ -24,10 +24,10 @@
 .vw-turntable-toolbar summary {
   display: block;
   padding: 0.45rem 0.7rem;
-  border: 1px solid #654930;
-  border-radius: 0.5rem;
-  background: #2a2019;
-  color: #f5e9da;
+  border: 1px solid var(--vw-border);
+  border-radius: var(--vw-control-radius);
+  background: var(--vw-bg-card);
+  color: var(--vw-text-primary);
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
@@ -45,7 +45,7 @@
   max-height: calc(100dvh - 4.5rem);
   overflow: auto;
   margin: 0;
-  border: 1px solid #654930;
+  border: 1px solid var(--vw-border);
   box-shadow: 0 12px 32px #080604b3;
 }
 
@@ -62,7 +62,7 @@
   overflow-y: auto;
   background:
     radial-gradient(ellipse at 28% 48%, #4a3022, transparent 60%),
-    linear-gradient(145deg, #251b14, #171310 75%);
+    var(--vw-bg-primary);
 }
 
 .vw-player-screen__art {
@@ -97,7 +97,7 @@
 
 .vw-player-screen__eyebrow {
   margin: 0 0 0.35rem;
-  color: #f0c486;
+  color: var(--vw-amber-primary);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -107,7 +107,7 @@
 .vw-player-screen__title {
   margin: 0;
   color: var(--vw-text-primary);
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--vw-heading-font);
   font-size: clamp(1.35rem, 3.4vw, 2.75rem);
   font-weight: 500;
   line-height: 1.15;
@@ -162,18 +162,6 @@
   width: 96%;
 }
 
-.vw-turntable__body .vw-tonearm {
-  top: 8%;
-  left: 79%;
-  right: auto;
-  width: 52%;
-  transform: rotate(84deg);
-}
-
-.vw-turntable[data-playback-state='playing'] .vw-turntable__body .vw-tonearm {
-  transform: rotate(109deg);
-}
-
 .vw-player-controls {
   display: flex;
   align-items: center;
@@ -185,7 +173,7 @@
 .vw-player-controls button {
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(216, 175, 111, 0.4);
+  border: 1px solid var(--vw-border);
   border-radius: 50%;
   color: var(--vw-text-primary);
   cursor: pointer;
@@ -204,16 +192,16 @@
 .vw-player-controls__secondary {
   width: 42px;
   height: 42px;
-  background: rgba(44, 32, 22, 0.82);
+  background: var(--vw-bg-card);
   font-size: 1rem;
 }
 
 .vw-player-controls__primary {
   width: 58px;
   height: 58px;
-  background: linear-gradient(145deg, #f0c486, #bb7844);
+  background: var(--vw-gradient-amber);
   box-shadow: 0 5px 20px rgba(224, 166, 84, 0.25);
-  color: #21170f !important;
+  color: var(--vw-accent-contrast) !important;
   font-size: 1.25rem;
 }
 

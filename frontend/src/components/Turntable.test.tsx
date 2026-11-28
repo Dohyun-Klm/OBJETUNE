@@ -107,6 +107,21 @@ describe('Turntable', () => {
     render(<Turntable nowPlaying={null} playbackState="stopped" onPlayPause={() => {}} />);
     expect(screen.getByTestId('hp-light')).toBeInTheDocument();
   });
+
+  it('moves the stylus inward with playback, holds it when paused, and parks it when stopped', () => {
+    const props = { nowPlaying: mockNowPlaying, onPlayPause: jest.fn() };
+    const { rerender } = render(<Turntable {...props} playbackState="playing" progress={0} />);
+    const tonearm = screen.getByTestId('tonearm');
+    expect(tonearm).toHaveStyle('transform: rotate(0deg)');
+    rerender(<Turntable {...props} playbackState="playing" progress={0.5} />);
+    expect(tonearm).toHaveStyle('transform: rotate(13.5deg)');
+    rerender(<Turntable {...props} playbackState="paused" progress={0.5} />);
+    expect(tonearm).toHaveStyle('transform: rotate(13.5deg)');
+    rerender(<Turntable {...props} playbackState="playing" progress={1.2} />);
+    expect(tonearm).toHaveStyle('transform: rotate(27deg)');
+    rerender(<Turntable {...props} playbackState="stopped" progress={1} />);
+    expect(tonearm).toHaveStyle('transform: rotate(-12deg)');
+  });
 });
 
 describe('VinylRecord (via Turntable)', () => {

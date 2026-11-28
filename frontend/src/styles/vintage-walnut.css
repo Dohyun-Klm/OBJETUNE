@@ -5,11 +5,12 @@
  */
 
 /* 색상 토큰 */
-:root {
+html:root {
+  color-scheme: dark;
   /* 따뜻한 레코드샵 배경 */
-  --vw-bg-primary: #19140f;
-  --vw-bg-secondary: #2d241a;
-  --vw-bg-card: #33271c;
+  --vw-bg-primary: #1a1512;
+  --vw-bg-secondary: #211a16;
+  --vw-bg-card: #2b221c;
   --vw-bg-accent: #d69a50;
   
   /* 월넛 우드 */
@@ -20,7 +21,7 @@
   /* 텍스트 */
   --vw-text-primary: #f4ead9;
   --vw-text-secondary: #c1ae92;
-  --vw-text-disabled: #83725c;
+  --vw-text-disabled: #a2907c;
   
   /* 앰버 조명 */
   --vw-amber-primary: #e2ad63;
@@ -32,6 +33,12 @@
   
   /* 실버 */
   --vw-silver: #5a4835;
+  --vw-border: #47382d;
+  --vw-surface: var(--vw-bg-card);
+  --vw-accent-contrast: #24180e;
+  --vw-focus: #f0c486;
+  --vw-control-radius: 0.5rem;
+  --vw-heading-font: Georgia, 'Times New Roman', serif;
   
   /* 다크 배경 */
   --vw-amber-bg: #3b2b1c;
@@ -39,6 +46,19 @@
   /* 그라데이션 */
   --vw-gradient-walnut: linear-gradient(135deg, #925d34 0%, #422b1b 100%);
   --vw-gradient-amber: linear-gradient(135deg, #f0c47a 0%, #bd7938 100%);
+}
+
+.vw-root :where(button, a, input, select, summary):focus-visible {
+  outline: 2px solid var(--vw-focus);
+  outline-offset: 2px;
+}
+
+.vw-root :where(input[type='checkbox'], input[type='range']) {
+  accent-color: var(--vw-amber-primary);
+}
+
+.vw-root .vw-queue-panel__item--playing {
+  background: var(--vw-amber-bg);
 }
 
 /* 레이아웃 기본 */

@@ -13,50 +13,13 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f0e6;
-  color: #2c1f0d;
+  background-color: var(--vw-bg-primary);
+  color: var(--vw-text-primary);
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
-}
-
-/* Vintage Walnut 디자인 토큰 */
-:root {
-  /* 베이스 컬러 - Vintage Walnut */
-  --vw-bg-primary: #f5f0e6;
-  --vw-bg-secondary: #e6d8c3;
-  --vw-bg-card: #d4c0a8;
-  --vw-bg-accent: #c9a67b;
-  
-  /* 월넛 우드 */
-  --vw-wood-primary: #8b6d47;
-  --vw-wood-dark: #6b4f2e;
-  --vw-wood-light: #a88a6b;
-  
-  /* 텍스트 */
-  --vw-text-primary: #2c1f0d;
-  --vw-text-secondary: #5a462c;
-  --vw-text-disabled: #8a7a62;
-  
-  /* 앰버 라이트 */
-  --vw-amber-primary: #d4a55f;
-  --vw-amber-dark: #b8863c;
-  
-  /* 브ラック */
-  --vw-black-primary: #1a1208;
-  --vw-black-dark: #0d0a04;
-  
-  /* 실버 */
-  --vw-silver: #c0b09a;
-  
-  /* 앰브 배경 */
-  --vw-amber-bg: #f0e6d6;
-  
-  /* 그라데이션 */
-  --vw-gradient-walnut: linear-gradient(135deg, #8b6d47 0%, #a88a6b 50%, #6b4f2e 100%);
-  --vw-gradient-amber: linear-gradient(135deg, #d4a55f 0%, #f0e6d6 100%);
 }
 
 /* 스크롤바 스타일링 */

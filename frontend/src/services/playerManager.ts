@@ -50,6 +50,7 @@ class PlayerManager implements PlayerManagerInterface {
   private eventListeners: Map<string, EventCallback[]> = new Map();
   private youtubePlayer: any = null;
   private soundcloudWidget: any = null;
+  private soundcloudFrame: HTMLIFrameElement | null = null;
   private youtubeApiLoaded: boolean = false;
   private soundcloudApiLoaded: boolean = false;
 
@@ -69,6 +70,8 @@ class PlayerManager implements PlayerManagerInterface {
       this.destroy();
       
       this.currentTrack = track;
+      this.currentTime = 0;
+      this.duration = track.duration || 0;
       this.isBuffering = true;
       
       if (track.platform === 'youtube') {
@@ -144,30 +147,47 @@ class PlayerManager implements PlayerManagerInterface {
         iframe.src = track.embedUrl || track.url!;
         
         document.body.appendChild(iframe);
+        this.soundcloudFrame = iframe;
         this.soundcloudWidget = (window as any).SC?.Widget(iframe);
         
         if (this.soundcloudWidget) {
-          this.soundcloudWidget.bind((window as any).SC.Widget.Events.READY, () => {
+          const widget = this.soundcloudWidget;
+          const events = (window as any).SC.Widget.Events;
+          const readDuration = () => widget.getDuration((milliseconds: number) => {
+            if (this.soundcloudWidget === widget && Number.isFinite(milliseconds) && milliseconds > 0) {
+              this.duration = milliseconds / 1000;
+            }
+          });
+          widget.bind(events.PLAY_PROGRESS, ({ currentPosition, relativePosition }: { currentPosition: number; relativePosition?: number }) => {
+            if (this.soundcloudWidget !== widget || !Number.isFinite(currentPosition)) return;
+            this.currentTime = currentPosition / 1000;
+            if (!this.duration && relativePosition && relativePosition > 0) {
+              this.duration = this.currentTime / relativePosition;
+            }
+          });
+          widget.bind(events.READY, () => {
+            readDuration();
             this.notify('ready', { track: this.currentTrack });
             resolve();
           });
           
-          this.soundcloudWidget.bind((window as any).SC.Widget.Events.Play, () => {
+          widget.bind(events.PLAY, () => {
+            readDuration();
             this.isPlaying = true;
             this.notify('play', { state: 'playing' });
           });
           
-          this.soundcloudWidget.bind((window as any).SC.Widget.Events.Pause, () => {
+          widget.bind(events.PAUSE, () => {
             this.isPlaying = false;
             this.notify('pause', { state: 'paused' });
           });
           
-          this.soundcloudWidget.bind((window as any).SC.Widget.Events.Finish, () => {
+          widget.bind(events.FINISH, () => {
             this.isPlaying = false;
             this.notify('end', { state: 'stopped' });
           });
           
-          this.soundcloudWidget.bind((window as any).SC.Widget.Events.Error, (e: any) => {
+          widget.bind(events.ERROR, (e: any) => {
             this.error = e.message || 'SoundCloud 재생 오류';
             this.notify('error', { message: this.error });
           });
@@ -394,22 +414,12 @@ class PlayerManager implements PlayerManagerInterface {
 
   // 현재 시간 가져오기
   async getCurrentTime(): Promise<number> {
-    if (this.currentTrack?.platform === 'youtube' && this.youtubePlayer) {
-      return this.youtubePlayer.getCurrentTime() || 0;
-    } else if (this.currentTrack?.platform === 'soundcloud' && this.soundcloudWidget) {
-      return this.soundcloudWidget.getCurrentPosition() / 1000 || 0;
-    }
-    return this.currentTime;
+    return this.getCurrentTimeSync();
   }
 
   // 길이 가져오기
   async getDuration(): Promise<number> {
-    if (this.currentTrack?.platform === 'youtube' && this.youtubePlayer) {
-      return this.youtubePlayer.getDuration() || 0;
-    } else if (this.currentTrack?.platform === 'soundcloud' && this.soundcloudWidget) {
-      return this.soundcloudWidget.getDuration() / 1000 || 0;
-    }
-    return this.duration;
+    return this.getDurationSync();
   }
 
   // 현재 위치의 PlayerState 반환
@@ -470,15 +480,13 @@ class PlayerManager implements PlayerManagerInterface {
     }
     
     if (this.soundcloudWidget) {
-      this.soundcloudWidget.destroy();
+      this.soundcloudWidget.destroy?.();
       this.soundcloudWidget = null;
     }
     
     // iframe 제거
-    const iframe = document.querySelector('iframe[src*="soundcloud.com"]');
-    if (iframe && iframe.parentNode) {
-      iframe.parentNode.removeChild(iframe);
-    }
+    this.soundcloudFrame?.remove();
+    this.soundcloudFrame = null;
   }
 
   // 이벤트 구독
@@ -517,12 +525,12 @@ class PlayerManager implements PlayerManagerInterface {
 
   // 현재 진행 시간
   getCurrentTimeSync(): number {
-    return this.currentTime;
+    return this.youtubePlayer?.getCurrentTime?.() ?? this.currentTime;
   }
 
   // 현재 길이
   getDurationSync(): number {
-    return this.duration;
+    return this.youtubePlayer?.getDuration?.() || this.duration;
   }
 
   // 현재 볼륨

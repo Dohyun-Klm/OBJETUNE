@@ -10,8 +10,8 @@
   gap: 0.85rem;
   height: 76px;
   padding: 0 1.25rem;
-  border-top: 1px solid rgba(211, 170, 112, 0.28);
-  background: linear-gradient(110deg, #2b2118, #1d1812 65%);
+  border-top: 1px solid var(--vw-border);
+  background: var(--vw-bg-secondary);
   box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.22);
 }
 
@@ -100,7 +100,7 @@
   height: 42px;
   border-color: rgba(245, 202, 130, 0.55);
   background: var(--vw-gradient-amber);
-  color: #26190e;
+  color: var(--vw-accent-contrast);
 }
 
 .vw-mini-player__play:hover {

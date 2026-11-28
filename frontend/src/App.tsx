@@ -243,6 +243,29 @@ function App() {
   const displayItems = getDisplayItems();
   const isPlaylistView = currentView === 'playlists';
   const isTurntableMode = currentMode === 'turntable';
+  const turntableTrack = nowPlaying.track;
+  const [tonearmPosition, setTonearmPosition] = useState<{ track: Track; progress: number } | null>(null);
+
+  useEffect(() => {
+    if (!isTurntableMode || !turntableTrack.id || turntablePlaybackState === 'stopped') {
+      setTonearmPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      if (playerManager.getCurrentTrack()?.id !== turntableTrack.id) return;
+      const elapsed = playerManager.getCurrentTimeSync();
+      const duration = playerManager.getDurationSync();
+      if (Number.isFinite(elapsed) && Number.isFinite(duration) && duration > 0) {
+        setTonearmPosition({ track: turntableTrack, progress: elapsed / duration });
+      }
+    };
+
+    updatePosition();
+    if (turntablePlaybackState !== 'playing') return;
+    const timer = window.setInterval(updatePosition, 250);
+    return () => window.clearInterval(timer);
+  }, [isTurntableMode, turntableTrack, turntablePlaybackState]);
 
   // 플랫폼 API 로드
   useEffect(() => {
@@ -287,6 +310,7 @@ function App() {
     const errorSub = playerManager.on('error', (event) => {
       const errMsg = (event as any)?.message || '재생 오류가 발생했습니다';
       setError(errMsg);
+      setTurntablePlaybackState('stopped');
     });
     if (errorSub && typeof errorSub.unsubscribe === 'function') {
       subscriptions.push(errorSub.unsubscribe);
@@ -712,6 +736,7 @@ function App() {
             <Turntable
               nowPlaying={nowPlaying}
               playbackState={turntablePlaybackState}
+              progress={tonearmPosition?.track === turntableTrack ? tonearmPosition.progress : 0}
               onPlayPause={handlePlayPause}
               onPrevious={handlePrevious}
               onNext={handleNext}
