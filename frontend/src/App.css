@@ -34,6 +34,67 @@
     var(--vw-bg-primary);
 }
 
+.vw-playback-workspace,
+.vw-playback-screen {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.vw-playback-screen {
+  flex-direction: column;
+  container-type: inline-size;
+}
+
+.vw-youtube-dock {
+  flex: 0 0 auto;
+  width: 224px;
+  padding: 0.75rem;
+  background: var(--vw-bg-primary);
+}
+
+.vw-youtube-dock[hidden] {
+  display: none;
+}
+
+.vw-youtube-dock #youtube-player-container {
+  width: 200px;
+  height: 200px;
+  background: #000;
+  border-radius: var(--vw-control-radius);
+}
+
+.vw-youtube-dock iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.vw-youtube-dock__error {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: var(--vw-focus);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .vw-playback-workspace--video {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .vw-playback-workspace--video .vw-playback-screen {
+    flex: 1 0 auto;
+  }
+
+  .vw-playback-workspace--video .vw-content,
+  .vw-playback-workspace--video .vw-turntable-container {
+    overflow: visible;
+  }
+}
+
 .vw-content__header {
   display: flex;
   justify-content: space-between;

@@ -201,7 +201,7 @@
   font-size: 1.25rem;
 }
 
-@media (max-width: 560px) {
+@container (max-width: 560px) {
   .vw-turntable-container {
     grid-template-columns: minmax(0, 24rem);
     align-content: start;

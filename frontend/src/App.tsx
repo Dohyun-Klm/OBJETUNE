@@ -9,18 +9,15 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { EmptyState } from './components/EmptyState';
 import { Settings } from './components/Settings';
 import { Turntable } from './components/Turntable';
-import { 
-  Track, 
-  AppMode, 
-  PlatformFilter, 
-  TurntableSettings, 
+import {
+  Track,
+  AppMode,
+  PlatformFilter,
+  TurntableSettings,
   PlaybackState,
   NowPlaying,
 } from './types';
-import {
-  loadYouTubeAPI, 
-  loadSoundCloudAPI
-} from './services/platformAdapter';
+import { loadSoundCloudAPI } from './services/platformAdapter';
 import { setMode as setTauriMode } from './services/tauriApi';
 import { playerManager } from './services/playerManager';
 import {
@@ -43,13 +40,14 @@ const tauriWindow = typeof window !== 'undefined' && (window as any).__TAURI_INT
 function App() {
   // 앱 상태
   const [currentMode, setCurrentMode] = useState<AppMode>('shell');
-  
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('youtube');
-  
+
   // 로딩 및 오류 상태
   const [error, setError] = useState<string | null>(null);
-  
+  const [showYouTubePlayer, setShowYouTubePlayer] = useState(false);
+
   // 현재 재생 상태 - 빈 상태에서 시작
   const [nowPlaying, setNowPlaying] = useState<NowPlaying>({
     track: {
@@ -72,13 +70,13 @@ function App() {
     shuffle: false,
     repeat: 'off',
   });
-  
+
   // 턴테이블 모드 재생 상태
   const [turntablePlaybackState, setTurntablePlaybackState] = useState<PlaybackState>('stopped');
 
   // 로컬 트랙 및 플레이리스트
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
-  
+
 
   // 턴테이블 설정
   const [turntableSettings, setTurntableSettings] = useState<TurntableSettings>({
@@ -97,7 +95,7 @@ function App() {
         if (await checkTauri()) {
           const mode = await getCurrentMode();
           setCurrentMode(mode);
-          
+
           setLocalTracks(await getAllTracks());
         } else {
           // 개발 모드: 빈 상태
@@ -113,7 +111,7 @@ function App() {
       }
     };
     loadAppData();
-    
+
     // 로컬스토리지에서 턴테이블 설정 로드
     try {
       const savedSettings = localStorage.getItem('turntable-settings');
@@ -123,7 +121,7 @@ function App() {
     } catch {
       // 로드 실패 시 기본값 사용
     }
-    
+
     // 글로벌 미디어 단축키 등록
     const shortcutsPromise = registerMediaShortcuts();
     if (shortcutsPromise && typeof shortcutsPromise.catch === 'function') {
@@ -131,7 +129,7 @@ function App() {
         console.error('Failed to register media shortcuts:', err);
       });
     }
-    
+
     return () => {
       const unregPromise = unregisterMediaShortcuts();
       if (unregPromise && typeof unregPromise.catch === 'function') {
@@ -147,7 +145,7 @@ function App() {
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           track.album.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesSearch;
   });
 
@@ -180,8 +178,6 @@ function App() {
   useEffect(() => {
     const loadAPIs = async () => {
       try {
-        // YouTube API 로드
-        await loadYouTubeAPI();
         // SoundCloud API 로드
         await loadSoundCloudAPI();
       } catch (err) {
@@ -194,9 +190,10 @@ function App() {
   // PlayerManager 상태 구독
   useEffect(() => {
     const subscriptions: Array<() => void> = [];
-    
+
     const playSub = playerManager.on('play', (event) => {
       setTurntablePlaybackState('playing');
+      setNowPlaying(prev => ({ ...prev, isPlaying: true }));
     });
     if (playSub && typeof playSub.unsubscribe === 'function') {
       subscriptions.push(playSub.unsubscribe);
@@ -204,6 +201,7 @@ function App() {
 
     const pauseSub = playerManager.on('pause', (event) => {
       setTurntablePlaybackState('paused');
+      setNowPlaying(prev => ({ ...prev, isPlaying: false }));
     });
     if (pauseSub && typeof pauseSub.unsubscribe === 'function') {
       subscriptions.push(pauseSub.unsubscribe);
@@ -253,6 +251,8 @@ function App() {
 
   const playTrack = useCallback(async (track: Track, saveNewTrack = false) => {
     const playerTrackId = playerManager.getCurrentTrack()?.id;
+    setError(null);
+    setShowYouTubePlayer(track.platform === 'youtube');
     const loadedTrack = await playerManager.load(track);
     const metadataChanged = track.title !== loadedTrack.title || track.artist !== loadedTrack.artist
       || track.thumbnail !== loadedTrack.thumbnail || track.coverArtUrl !== loadedTrack.coverArtUrl
@@ -266,15 +266,15 @@ function App() {
         : [...prev, loadedTrack]);
     }
 
-    await playerManager.play();
     setNowPlaying(prev => ({
       ...prev,
       track: loadedTrack,
-      isPlaying: true,
+      isPlaying: false,
       progress: 0,
       duration: loadedTrack.duration,
     }));
-    setTurntablePlaybackState('playing');
+    setTurntablePlaybackState('paused');
+    await playerManager.play();
     setQueue(prev => {
       const existing = prev.findIndex(item => item.id === loadedTrack.id);
       if (existing >= 0) return prev.map(item => item.id === loadedTrack.id ? loadedTrack : item);
@@ -294,10 +294,10 @@ function App() {
   // YouTube 실제 검색 핸들러
   const handleYouTubeSearch = async (query: string) => {
     if (!query.trim()) return;
-    
+
     try {
       const results = await searchYouTubeTracks(query, 10);
-      
+
       // 검색 결과를 트랙으로 변환하여 로컬 트랙에 추가하거나 표시
       for (const result of results) {
         // 기존 트랙에 존재하는지 확인
@@ -306,7 +306,7 @@ function App() {
           setLocalTracks(prev => [...prev, result]);
         }
       }
-      
+
       if (results.length === 0) {
         setError('검색 결과가 없습니다.');
       }
@@ -348,20 +348,12 @@ function App() {
   // 재생/일시정지 토글
   const handlePlayPause = async () => {
     try {
+      if (!nowPlaying.track.id) return;
       if (nowPlaying.isPlaying) {
         await playerManager.pause();
-        setTurntablePlaybackState('paused');
       } else {
-        if (nowPlaying.track) {
-          await playerManager.play();
-          setTurntablePlaybackState('playing');
-        }
+        await playerManager.play();
       }
-      
-      setNowPlaying(prev => ({
-        ...prev,
-        isPlaying: !prev.isPlaying,
-      }));
     } catch (err) {
       const message = err instanceof Error ? err.message : '재생 제어 중 오류가 발생했습니다';
       setError(message);
@@ -389,7 +381,7 @@ function App() {
     const newSettings = { ...turntableSettings, dynamicVinylLabel: !turntableSettings.dynamicVinylLabel };
     setTurntableSettings(newSettings);
     localStorage.setItem('turntable-settings', JSON.stringify(newSettings));
-    
+
     // Tauri에도 저장
     setSetting('dynamicVinylLabel', String(!turntableSettings.dynamicVinylLabel));
   };
@@ -419,10 +411,7 @@ function App() {
     <div className="vw-root">
       {/* SoundCloud Player Container (위젯용) */}
       <div id="soundcloud-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
-      
-      {/* YouTube Player Container */}
-      <div id="youtube-player-container" style={{ position: 'absolute', width: '100%', height: '0', visibility: 'hidden' }} />
-      
+
       {/* 메인 컨텐츠 */}
       <div className="vw-main">
         <header className="vw-turntable-toolbar">
@@ -446,82 +435,90 @@ function App() {
             </button>
           </div>
         </header>
-        {isTurntableMode && (
-          <Turntable
-              nowPlaying={nowPlaying}
-              playbackState={turntablePlaybackState}
-              progress={tonearmPosition?.track === turntableTrack ? tonearmPosition.progress : 0}
-              onPlayPause={handlePlayPause}
-              onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
-              onNext={nextTrack ? handleNext : undefined}
-              dynamicLabel={turntableSettings.dynamicVinylLabel}
-              className="vw-turntable--mode"
-            />
-        )}
-        
-        {/* 라이브러리 모드 뷰 */}
-        {!isTurntableMode && (
-          <>
-            {/* 검색 바 */}
-            <SearchBar
-              value={searchQuery}
-              onSearch={setSearchQuery}
-              platformFilter={platformFilter}
-              onPlatformFilter={(platform) => {
-                setPlatformFilter(platform);
-                setSearchQuery('');
-                setError(null);
-              }}
-              onYouTubeSearch={handleYouTubeSearch}
-              onSoundCloudUrlSubmit={handleSoundCloudUrlSubmit}
-            />
-            
-            {/* 컨텐츠 영역 */}
-            <main className="vw-content" role="main">
-              <div className="vw-content__header">
-                <h1 className="vw-content__title">Library</h1>
-              </div>
-              
-              {/* 오류 상태 */}
-              {error && (
-                <div className="vw-error" role="alert">
-                  <p>{error}</p>
-                </div>
-              )}
-              
-              {/* 빈 상태 */}
-              {!error && filteredTracks.length === 0 && (
-                <EmptyState
-                  title="No music found"
-                  description="Try adjusting your search or filter criteria"
+        <div className={`vw-playback-workspace${showYouTubePlayer ? ' vw-playback-workspace--video' : ''}`}>
+          <aside className="vw-youtube-dock" hidden={!showYouTubePlayer} aria-label="YouTube 공식 플레이어">
+            <div id="youtube-player-container" />
+            {error && isTurntableMode && <p className="vw-youtube-dock__error" role="alert">{error}</p>}
+          </aside>
+          <div className="vw-playback-screen">
+            {isTurntableMode && (
+              <Turntable
+                  nowPlaying={nowPlaying}
+                  playbackState={turntablePlaybackState}
+                  progress={tonearmPosition?.track === turntableTrack ? tonearmPosition.progress : 0}
+                  onPlayPause={handlePlayPause}
+                  onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
+                  onNext={nextTrack ? handleNext : undefined}
+                  dynamicLabel={turntableSettings.dynamicVinylLabel}
+                  className="vw-turntable--mode"
                 />
-              )}
-              
-              {/* 결과 목록 */}
-              {filteredTracks.length > 0 && (
-                <div className="vw-library-grid">
-                  {filteredTracks.map(track => (
-                    <MusicCard
-                      key={track.id}
-                      track={track}
-                      onPlay={handlePlay}
-                      onClick={handlePlay}
-                      onAddToQueue={handleAddToQueue}
+            )}
+
+            {/* 라이브러리 모드 뷰 */}
+            {!isTurntableMode && (
+              <>
+                {/* 검색 바 */}
+                <SearchBar
+                  value={searchQuery}
+                  onSearch={setSearchQuery}
+                  platformFilter={platformFilter}
+                  onPlatformFilter={(platform) => {
+                    setPlatformFilter(platform);
+                    setSearchQuery('');
+                    setError(null);
+                  }}
+                  onYouTubeSearch={handleYouTubeSearch}
+                  onSoundCloudUrlSubmit={handleSoundCloudUrlSubmit}
+                />
+
+                {/* 컨텐츠 영역 */}
+                <main className="vw-content" role="main">
+                  <div className="vw-content__header">
+                    <h1 className="vw-content__title">Library</h1>
+                  </div>
+
+                  {/* 오류 상태 */}
+                  {error && (
+                    <div className="vw-error" role="alert">
+                      <p>{error}</p>
+                    </div>
+                  )}
+
+                  {/* 빈 상태 */}
+                  {!error && filteredTracks.length === 0 && (
+                    <EmptyState
+                      title="No music found"
+                      description="Try adjusting your search or filter criteria"
                     />
-                  ))}
-                </div>
-              )}
-            </main>
-            
-            {/* 미니 플레이어 */}
-            <MiniPlayer
-              nowPlaying={nowPlaying}
-              onPlayPause={handlePlayPause}
-              onNext={nextTrack ? handleNext : undefined}
-              onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
-            />
-          </>
-        )}
+                  )}
+
+                  {/* 결과 목록 */}
+                  {filteredTracks.length > 0 && (
+                    <div className="vw-library-grid">
+                      {filteredTracks.map(track => (
+                        <MusicCard
+                          key={track.id}
+                          track={track}
+                          onPlay={handlePlay}
+                          onClick={handlePlay}
+                          onAddToQueue={handleAddToQueue}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </main>
+
+                {/* 미니 플레이어 */}
+                <MiniPlayer
+                  nowPlaying={nowPlaying}
+                  onPlayPause={handlePlayPause}
+                  onNext={nextTrack ? handleNext : undefined}
+                  onPrevious={previousTrack ? () => handlePlay(previousTrack) : undefined}
+                />
+              </>
+            )}
+          </div>
+        </div>
         <div className="vw-session-queue">
           {queuePanelOpen && (
             <section id="session-queue" className="vw-session-queue__panel" aria-label="현재 재생목록">

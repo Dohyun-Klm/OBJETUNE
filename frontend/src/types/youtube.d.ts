@@ -5,6 +5,7 @@
 
 declare global {
   interface Window {
+    onYouTubeIframeAPIReady?: () => void;
     YT: {
       Player: new (elementId: string, options: YT.PlayerOptions) => YT.Player;
     };
@@ -47,6 +48,7 @@ declare global {
 
     // 플레이어 이벤트
     interface PlayerEvents {
+      onAutoplayBlocked?: () => void;
       onReady?: (event: PlayerEvent) => void;
       onStateChange?: (event: StateChangeEvent) => void;
       onError?: (event: ErrorEvent) => void;

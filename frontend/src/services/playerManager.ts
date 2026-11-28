@@ -108,20 +108,27 @@ class PlayerManager implements PlayerManagerInterface {
       await this.ensureYouTubeAPI();
     }
     
-    return new Promise((resolve, reject) => {
-      try {
+    let readyTimeout: number | undefined;
+    try {
+      await new Promise<void>((resolve, reject) => {
         const container = document.getElementById('youtube-player-container');
-        if (container) {
-          container.innerHTML = '';
+        if (!container) {
+          reject(new Error('YouTube 플레이어를 표시할 공간을 찾지 못했습니다.'));
+          return;
         }
+        const mount = document.createElement('div');
+        mount.id = 'youtube-player-mount';
+        container.replaceChildren(mount);
+        readyTimeout = window.setTimeout(() => reject(new Error('YouTube 플레이어를 불러오는 데 시간이 너무 오래 걸렸습니다.')), 15000);
         
         const videoId = track.platformId || track.id.split('-').pop() || track.id;
-        this.youtubePlayer = new (window as any).YT.Player('youtube-player-container', {
+        this.youtubePlayer = new window.YT.Player(mount.id, {
+          width: '100%',
+          height: '100%',
           videoId,
           playerVars: {
             playsinline: 1,
             rel: 0,
-            modestbranding: 1,
           },
           events: {
             onReady: () => {
@@ -129,13 +136,17 @@ class PlayerManager implements PlayerManagerInterface {
               resolve();
             },
             onStateChange: (event: any) => this.handleYouTubeStateChange(event),
-            onError: (event: any) => this.handleYouTubeError(event),
+            onError: (event) => {
+              this.handleYouTubeError(event);
+              reject(new Error(this.error || 'YouTube 재생 오류'));
+            },
+            onAutoplayBlocked: () => this.handleYouTubeStateChange({ data: 2 }),
           }
         });
-      } catch (error) {
-        reject(error);
-      }
-    });
+      });
+    } finally {
+      window.clearTimeout(readyTimeout);
+    }
   }
 
   /**
@@ -241,7 +252,7 @@ class PlayerManager implements PlayerManagerInterface {
    */
   private ensureYouTubeAPI(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if ((window as any).YT) {
+      if (typeof window.YT?.Player === 'function') {
         this.youtubeApiLoaded = true;
         resolve();
         return;
@@ -249,11 +260,24 @@ class PlayerManager implements PlayerManagerInterface {
       
       const script = document.createElement('script');
       script.src = 'https://www.youtube.com/iframe_api';
-      script.onload = () => {
+      const previous = window.onYouTubeIframeAPIReady;
+      const restore = () => {
+        window.clearTimeout(timeout);
+        window.onYouTubeIframeAPIReady = previous;
+      };
+      const fail = () => {
+        restore();
+        script.remove();
+        reject(new Error('YouTube IFrame API 로드 실패'));
+      };
+      const timeout = window.setTimeout(fail, 15000);
+      window.onYouTubeIframeAPIReady = () => {
+        restore();
         this.youtubeApiLoaded = true;
         resolve();
+        previous?.();
       };
-      script.onerror = () => reject(new Error('YouTube IFrame API 로드 실패'));
+      script.onerror = fail;
       document.head.appendChild(script);
     });
   }
@@ -289,8 +313,13 @@ class PlayerManager implements PlayerManagerInterface {
     switch (state) {
       case 1: // playing
         this.isBuffering = false;
+        this.isPlaying = true;
+        this.notify('play', { state: 'playing' });
         break;
       case 2: // paused
+        this.isBuffering = false;
+        this.isPlaying = false;
+        this.notify('pause', { state: 'paused' });
         break;
       case 3: // buffering
         this.isBuffering = true;
@@ -332,8 +361,6 @@ class PlayerManager implements PlayerManagerInterface {
     
     if (this.currentTrack.platform === 'youtube' && this.youtubePlayer) {
       this.youtubePlayer.playVideo();
-      this.isPlaying = true;
-      this.notify('play', { state: 'playing' });
     } else if (this.currentTrack.platform === 'soundcloud' && this.soundcloudWidget) {
       this.soundcloudWidget.play();
       this.isPlaying = true;
@@ -347,8 +374,6 @@ class PlayerManager implements PlayerManagerInterface {
     
     if (this.currentTrack.platform === 'youtube' && this.youtubePlayer) {
       this.youtubePlayer.pauseVideo();
-      this.isPlaying = false;
-      this.notify('pause', { state: 'paused' });
     } else if (this.currentTrack.platform === 'soundcloud' && this.soundcloudWidget) {
       this.soundcloudWidget.pause();
       this.isPlaying = false;
